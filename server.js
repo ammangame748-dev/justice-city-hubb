@@ -32,7 +32,7 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
-const cloudscraper = require('cloudscraper');
+
 
 async function updateStatus() {
   try {
