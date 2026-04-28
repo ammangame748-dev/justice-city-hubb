@@ -54,6 +54,10 @@ browser = await puppeteer.launch({
         // --- حلقة لفحص كل ستريمر ---
         for (const streamer of streamers) {
             try {
+                await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+
+                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+
                 // الكود هنا يذهب لصفحة الستريمر ويفحص حالته
 await page.goto(`https://kick.com/${streamer.kickUsername}`, {
     waitUntil: 'networkidle2',
@@ -64,11 +68,16 @@ await page.goto(`https://kick.com/${streamer.kickUsername}`, {
 await new Promise(r => setTimeout(r, 5000)); 
 
 const isLive = await page.evaluate(() => {
-    // Kick حالياً بستخدم كلاسات مثل "bg-red-600" أو نصوص معينة داخل div
-    // البحث عن كلمة "LIVE" أو "مباشر" هو الأضمن
-    const bodyText = document.body.innerText;
-    return bodyText.includes('LIVE') || bodyText.includes('مباشر');
+    // 1. نبحث عن كلمة LIVE داخل العنصر الأحمر المشهور في كيك
+    const liveBadge = Array.from(document.querySelectorAll('div')).find(el => el.textContent === 'LIVE');
+    
+    // 2. أو نبحث عن وجود مشغل الفيديو (Video Tag)
+    const videoTag = document.querySelector('video');
+
+    return !!(liveBadge || videoTag);
 });
+
+
 
 
                 streamer.isLive = isLive;
