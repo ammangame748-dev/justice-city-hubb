@@ -32,61 +32,47 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
+const cloudscraper = require('cloudscraper');
+
 async function updateStatus() {
-  let browser;
   try {
     const streamers = await Streamer.find({ kickUsername: { $ne: null } });
     if (!streamers.length) return;
 
-    console.log(`🔍 جاري التحديث الذكي لـ ${streamers.length} ستريمر عبر Puppeteer...`);
-
-    // تشغيل المتصفح مرة واحدة لتوفير الموارد
-    browser = await puppeteer.launch({ 
-      headless: "new",
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
-    });
-    const page = await browser.newPage();
-    
-    // إعداد واجهة مستخدم حقيقية لتجنب الحظر
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    console.log(`🚀 جاري التحديث الذكي لـ ${streamers.length} ستريمر عبر Cloudscraper...`);
 
     for (const streamer of streamers) {
-      try {
-        const username = streamer.kickUsername.trim();
-        const apiUrl = `https://kick.com/api/v1/channels/${username}`;
+      const username = streamer.kickUsername.trim();
+      const apiUrl = `https://kick.com/api/v1/channels/${username}`;
 
-        // الدخول للرابط وانتظار البيانات
-        await page.goto(apiUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-        
-        // استخراج نص الـ JSON من الصفحة
-        const content = await page.evaluate(() => document.body.innerText);
-        const data = JSON.parse(content);
+      // طلب البيانات بطريقة تكسر الحماية
+      cloudscraper.get(apiUrl)
+        .then(async (response) => {
+          const data = JSON.parse(response);
 
-        if (data) {
-          // تحديث بيانات البث
-          streamer.isLive = !!data.livestream;
-          streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
-          
-          // تحديث الصورة الشخصية الحقيقية
-          if (data.user && data.user.profile_pic) {
-            streamer.profilePic = data.user.profile_pic;
+          if (data) {
+            streamer.isLive = !!data.livestream;
+            streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
+            
+            if (data.user && data.user.profile_pic) {
+              streamer.profilePic = data.user.profile_pic;
+            }
+
+            await streamer.save();
+            console.log(`✅ ${username} -> [بث: ${streamer.isLive} | مشاهدين: ${streamer.viewers}]`);
           }
+        })
+        .catch(err => {
+          console.log(`⚠️ فشل تحديث ${username}: ممكن الحساب خطأ أو الحماية قوية`);
+        });
 
-          await streamer.save();
-          console.log(`✅ تم تحديث ${username}: [بث: ${streamer.isLive} | مشاهدين: ${streamer.viewers}]`);
-        }
-      } catch (err) {
-        console.log(`⚠️ فشل تحديث ${streamer.kickUsername}: تأكد من الاسم أو حماية الموقع`);
-      }
+      // انتظار ثانية بين كل طلب عشان ما نتبلك
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
   } catch (err) {
-    console.error("❌ خطأ عام في عملية التحديث:", err.message);
-  } finally {
-    if (browser) await browser.close(); // إغلاق المتصفح بعد الانتهاء
+    console.error("❌ خطأ عام:", err.message);
   }
 }
-
-
 
 
 // فحص الحالة كل دقيقتين (120000 مللي ثانية)
