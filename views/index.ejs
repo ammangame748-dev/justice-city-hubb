@@ -456,6 +456,12 @@ async function loadParticles() {
 loadParticles();
 loadParticles();
 </script>
+<script>
+  // كود بخلي الصفحة تعمل ريفريش لحالها كل دقيقة عشان تحديث الحالات
+  setTimeout(function(){
+     location.reload();
+  }, 60000); 
+</script>
 
 </body>
 </html> 
