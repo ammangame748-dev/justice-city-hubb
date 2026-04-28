@@ -3,296 +3,140 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Justice City Hub | Ultimate Neon Edition</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+    <title>Justice City Hub | Fire Edition 🔥</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <script src="https://jsdelivr.net"></script>
 
     <style>
-        :root{
-            --bg:#04050a;
-            --glass:rgba(15,15,20,0.65);
-            --glass2:rgba(25,25,35,0.55);
-            --gold:#d4af37;
-            --gold2:#ffeaa0;
-            --text:#fff;
-            --muted:#9aa0aa;
-            --green:#00ff99;
-            --red:#ff3b3b;
-            --shadow:0 0 35px rgba(212,175,55,0.3);
+        :root {
+            --bg: #0a0101;
+            --fire: linear-gradient(45deg, #ff4500, #ff8c00, #ff2a00);
+            --fire-glow: 0 0 25px rgba(255, 69, 0, 0.5);
+            --glass: rgba(25, 5, 5, 0.85);
+            --text: #ffffff;
+            --muted: #ffb4a2;
+            --live: #00ff99;
         }
 
-        *{margin:0;padding:0;box-sizing:border-box;font-family:'Changa',sans-serif;}
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Changa', sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
-        body{
-            background:var(--bg);
-            color:var(--text);
-            overflow-x:hidden;
+        /* تأثير اللوجو العائم في الخلفية */
+        body::before {
+            content: ""; position: fixed; top: 50%; left: 50%; width: 600px; height: 600px;
+            background: url('/logo.png') no-repeat center; background-size: contain;
+            opacity: 0.07; transform: translate(-50%, -50%); filter: blur(2px) drop-shadow(0 0 40px #ff4500);
+            z-index: -1; animation: pulse 6s ease-in-out infinite;
         }
+        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -52%) scale(1.1); } }
 
-        #tsparticles{position:fixed;inset:0;z-index:-2;}
+        #tsparticles { position: fixed; inset: 0; z-index: -1; }
 
-        /* floating logo */
-        body::before{
-            content:"";
-            position:fixed;
-            top:50%;
-            left:50%;
-            width:750px;
-            height:750px;
-            background:url('/logo.png') no-repeat center;
-            background-size:contain;
-            opacity:0.05;
-            transform:translate(-50%,-50%);
-            animation:float 10s ease-in-out infinite;
-            filter:blur(0.7px) drop-shadow(0 0 60px rgba(212,175,55,0.3));
-            z-index:-1;
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: rgba(15, 0, 0, 0.9);
+            border-bottom: 2px solid #ff4500; backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100;
         }
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand img { width: 50px; height: 50px; border-radius: 10px; border: 1px solid #ff4500; box-shadow: var(--fire-glow); }
+        .brand h1 { font-size: 24px; font-weight: 800; background: var(--fire); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        @keyframes float{
-            0%{transform:translate(-50%,-50%) scale(1);}
-            50%{transform:translate(-50%,-53%) scale(1.06);}
-            100%{transform:translate(-50%,-50%) scale(1);}
-        }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+        .stat { background: var(--glass); padding: 25px; border-radius: 20px; border: 1px solid rgba(255, 69, 0, 0.2); text-align: center; transition: 0.4s; }
+        .stat:hover { transform: translateY(-10px); box-shadow: var(--fire-glow); border-color: #ff8c00; }
+        .stat h2 { font-size: 35px; color: #ff8c00; }
 
-        nav{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:15px 35px;
-            background:rgba(10,10,15,0.75);
-            backdrop-filter:blur(16px);
-            border-bottom:1px solid rgba(212,175,55,0.2);
-            position:sticky;
-            top:0;
-            z-index:1000;
-        }
+        .filters { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .filters button { padding: 10px 25px; border-radius: 25px; border: 1px solid #ff4500; background: none; color: #fff; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .filters button.active, .filters button:hover { background: var(--fire); color: #000; box-shadow: var(--fire-glow); }
 
-        .brand{display:flex;align-items:center;gap:12px;}
-        .brand img{width:45px;height:45px;border-radius:12px;box-shadow:var(--shadow);}
-        .brand h1{
-            font-size:18px;
-            background:linear-gradient(45deg,var(--gold),var(--gold2));
-            -webkit-background-clip:text;
-            -webkit-text-fill-color:transparent;
-        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto 50px; padding: 0 20px; }
+        .card { background: var(--glass); border-radius: 25px; padding: 30px; text-align: center; border: 1px solid rgba(255,69,0,0.2); transition: 0.4s; position: relative; backdrop-filter: blur(5px); }
+        .card:hover { transform: translateY(-15px) scale(1.03); border-color: #ff4500; box-shadow: 0 10px 40px rgba(255,69,0,0.3); }
+        .card.live { border: 2px solid var(--live); box-shadow: 0 0 20px rgba(0, 255, 153, 0.2); }
 
-        .nav-links a{
-            margin-right:10px;
-            padding:8px 14px;
-            border-radius:10px;
-            text-decoration:none;
-            color:#fff;
-            transition:.3s;
-        }
+        .avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid #ff4500; margin-bottom: 15px; background: #111; padding: 3px; }
+        .live-badge { position: absolute; top: 15px; left: 15px; background: var(--live); color: #000; padding: 5px 12px; border-radius: 10px; font-weight: 800; font-size: 12px; animation: flash 1.5s infinite; }
+        @keyframes flash { 50% { opacity: 0.5; } }
+        
+        .btn-view { display: block; margin-top: 20px; padding: 12px; border-radius: 15px; background: var(--fire); color: #000; font-weight: 800; text-decoration: none; transition: 0.3s; }
+        .btn-view:hover { letter-spacing: 1px; filter: brightness(1.2); }
 
-        .nav-links a:hover{background:rgba(212,175,55,0.15);}
-
-        .btn-gold{border:1px solid var(--gold);color:var(--gold)!important;}
-
-        /* donate button restored */
-        .btn-donate{
-            background:linear-gradient(45deg,var(--gold),var(--gold2));
-            color:#000!important;
-            font-weight:bold;
-            box-shadow:0 0 25px rgba(212,175,55,0.3);
-        }
-
-        .stats{
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:18px;
-            max-width:1100px;
-            margin:40px auto;
-            padding:0 20px;
-        }
-
-        .stat{
-            background:linear-gradient(145deg,var(--glass),var(--glass2));
-            padding:25px;
-            border-radius:18px;
-            text-align:center;
-            border:1px solid rgba(255,255,255,0.05);
-            transition:.3s;
-        }
-
-        .stat:hover{transform:translateY(-6px);box-shadow:var(--shadow);}
-        .stat h2{font-size:30px;color:var(--gold2);}
-        .stat p{color:var(--muted);}
-
-        .filters{
-            display:flex;
-            justify-content:center;
-            gap:10px;
-            margin:25px 0;
-        }
-
-        .filters button{
-            padding:10px 16px;
-            border-radius:12px;
-            border:1px solid rgba(255,255,255,0.1);
-            background:rgba(20,20,25,0.7);
-            color:#fff;
-            cursor:pointer;
-        }
-
-        .filters button.active,
-        .filters button:hover{
-            background:var(--gold);
-            color:#000;
-        }
-
-        .grid{
-            display:grid;
-            grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-            gap:18px;
-            max-width:1200px;
-            margin:30px auto;
-            padding:0 20px;
-        }
-
-        .card{
-            background:linear-gradient(145deg,var(--glass),var(--glass2));
-            border-radius:20px;
-            padding:20px;
-            text-align:center;
-            transition:.4s;
-            position:relative;
-            border:1px solid rgba(255,255,255,0.05);
-        }
-
-        .card:hover{
-            transform:translateY(-10px) scale(1.02);
-            box-shadow:0 0 45px rgba(212,175,55,0.25);
-            border-color:var(--gold);
-        }
-
-        .card.live{border:1px solid var(--green);}
-
-        .avatar{
-            width:85px;
-            height:85px;
-            border-radius:50%;
-            object-fit:cover;
-            border:2px solid var(--gold);
-        }
-
-        .live-badge{
-            position:absolute;
-            top:10px;
-            left:10px;
-            background:var(--green);
-            color:#000;
-            padding:5px 8px;
-            border-radius:8px;
-            font-size:11px;
-            font-weight:bold;
-        }
-
-        .btn{
-            display:inline-block;
-            margin-top:10px;
-            padding:8px 14px;
-            border-radius:12px;
-            background:linear-gradient(45deg,var(--gold),var(--gold2));
-            color:#000;
-            font-weight:bold;
-            text-decoration:none;
-        }
-
-        /* modal */
-        .modal{
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,0.85);
-            display:none;
-            justify-content:center;
-            align-items:center;
-        }
-
-        .modal-content{
-            width:360px;
-            background:var(--glass);
-            padding:25px;
-            border-radius:15px;
-            border:1px solid var(--gold);
-        }
-
-        input{
-            width:100%;
-            padding:12px;
-            margin:10px 0;
-            border-radius:10px;
-            background:#000;
-            border:1px solid rgba(255,255,255,0.1);
-            color:#fff;
-        }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #150505; padding: 40px; border-radius: 25px; border: 2px solid #ff4500; width: 380px; text-align: center; }
+        input { width: 100%; padding: 15px; margin: 20px 0; border-radius: 12px; border: 1px solid #ff4500; background: #000; color: #fff; text-align: center; }
     </style>
 </head>
 <body>
-
 <div id="tsparticles"></div>
 
 <nav>
     <div class="brand">
-        <img src="/logo.png" />
+        <img src="/logo.png" alt="Logo" />
         <h1>JUSTICE CITY HUB</h1>
     </div>
-
-    <div class="nav-links">
-        <a class="btn-donate" href="https://paypal.me/HosamHamaideh" target="_blank">☕ ادعم المشروع</a>
-        <a class="btn-gold" onclick="openModal()">أضف قناتك</a>
-    </div>
+    <button class="filters" style="margin:0"><button onclick="openModal()" class="active">إضافة قناة 🔥</button></button>
 </nav>
 
 <div class="stats">
     <div class="stat"><h2><%= stats.totalStreamers %></h2><p>ستريمرز</p></div>
     <div class="stat"><h2><%= stats.totalViewers %></h2><p>مشاهدات</p></div>
-    <div class="stat"><h2 style="color:var(--green)"><%= stats.liveNow %></h2><p>مباشر</p></div>
+    <div class="stat"><h2 style="color:var(--live)"><%= stats.liveNow %></h2><p>مباشر الآن</p></div>
 </div>
 
 <div class="filters">
     <button class="active" onclick="filter('all')">الكل</button>
-    <button onclick="filter('live')">مباشر</button>
+    <button onclick="filter('live')">البث المباشر 🔴</button>
     <button onclick="filter('offline')">أوفلاين</button>
 </div>
 
 <div class="grid">
 <% streamers.forEach(s => { %>
-    <div class="card <%= s.isLive ? 'live' : '' %>">
+    <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
         <% if(s.isLive){ %><div class="live-badge">LIVE</div><% } %>
-        <img class="avatar" src="<%= s.profilePic || '/logo.png' %>" />
-        <h3><%= s.kickUsername %></h3>
-        <p><%= s.isLive ? s.viewers+' مشاهدة' : 'غير مباشر' %></p>
-        <a class="btn" href="https://kick.com/<%= s.kickUsername %>" target="_blank">دخول</a>
+        <img class="avatar" src="<%= s.profilePic || '/logo.png' %>" onerror="this.src='/logo.png'" />
+        <h3 style="font-size: 22px;"><%= s.kickUsername %></h3>
+        <p style="color: var(--muted); margin-top: 5px;">
+            <%= s.isLive ? '🔥 ' + s.viewers + ' مشاهد' : '💤 حالياً أوفلاين' %>
+        </p>
+        <a class="btn-view" href="https://kick.com<%= s.kickUsername %>" target="_blank">دخول البث</a>
     </div>
 <% }) %>
 </div>
 
-<div class="modal" id="modal">
+<div class="modal" id="modal" onclick="if(event.target==this) closeModal()">
     <div class="modal-content">
-        <h3>إضافة قناة</h3>
+        <h2 style="color:#ff4500">سجل قناتك معنا</h2>
         <form action="/apply" method="POST">
-            <input name="kickUser" placeholder="اسم القناة" />
-            <button class="btn">إرسال</button>
+            <input name="kickUser" placeholder="اسم المستخدم في Kick" required />
+            <button type="submit" class="btn-view" style="width:100%; border:none; cursor:pointer">تقديم الطلب</button>
         </form>
     </div>
 </div>
 
 <script>
-function openModal(){document.getElementById('modal').style.display='flex';}
-function filter(t){
-document.querySelectorAll('.card').forEach(c=>{
-if(t==='all')c.style.display='block';
-if(t==='live')c.style.display=c.classList.contains('live')?'block':'none';
-if(t==='offline')c.style.display=!c.classList.contains('live')?'block':'none';
-});
-}
+    function openModal(){ document.getElementById('modal').style.display='flex'; }
+    function closeModal(){ document.getElementById('modal').style.display='none'; }
 
-tsParticles.load("tsparticles",{
-particles:{number:{value:70},color:{value:["#d4af37","#fff"]},move:{enable:true,speed:1.2}},background:{color:"#04050a"}
-});
+    function filter(t){
+        document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        document.querySelectorAll('.card').forEach(c => {
+            if(t==='all') c.style.display='block';
+            else if(t==='live') c.style.display = c.classList.contains('live') ? 'block' : 'none';
+            else c.style.display = !c.classList.contains('live') ? 'block' : 'none';
+        });
+    }
+
+    tsParticles.load("tsparticles", {
+        particles: {
+            number: { value: 70 },
+            color: { value: ["#ff4500", "#ffa500", "#ff0000"] },
+            move: { enable: true, speed: 2, direction: "top", random: true },
+            size: { value: { min: 1, max: 3 } },
+            opacity: { value: { min: 0.3, max: 0.7 } }
+        }
+    });
 </script>
-
 </body>
 </html>
