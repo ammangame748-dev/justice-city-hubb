@@ -59,6 +59,17 @@ async function updateStatus() {
  // قبل الدخول في evaluate، أضف هذا التفاعل الحقيقي
 await page.mouse.move(Math.random() * 500, Math.random() * 500); // حركة عشوائية
 await new Promise(r => setTimeout(r, 8000)); // انتظر 8 ثواني لضمان ظهور الرقم
+// انتظر حتى يظهر عنصر الفيديو أو عدد المشاهدات
+try {
+    await page.waitForSelector('span[data-viewer-count]', { timeout: 15000 });
+} catch (e) {
+    console.log("⏱️ تأخر تحميل عدد المشاهدين، سأحاول جلب البيانات المتاحة.");
+}
+
+// عمل Scroll خفيف للأعلى والأسفل لتحفيز تحميل الصور (Lazy Load)
+await page.evaluate(() => window.scrollBy(0, 500));
+await new Promise(r => setTimeout(r, 2000));
+await page.evaluate(() => window.scrollBy(0, -500));
 
 
 const streamData = await page.evaluate(() => {
