@@ -33,7 +33,6 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   status: { type: String, default: 'pending' }
 }));
 
-// استبدل دالة updateStatus القديمة بهذا الكود
 async function updateStatus() {
   let browser;
   try {
@@ -42,37 +41,67 @@ async function updateStatus() {
 
     console.log(`🔍 جاري فحص ${streamers.length} ستريمر عبر المتصفح...`);
 
-    // تشغيل المتصفح مرة واحدة للفحص
-    browser = await puppeteer.launch({ headless: "new" });
+    // تشغيل المتصفح مع إعدادات لتجنب الحظر
+    browser = await puppeteer.launch({ 
+      headless: "new", 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+    });
+    
     const page = await browser.newPage();
+    // إيهام الموقع أنك متصفح حقيقي
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
 
     for (const streamer of streamers) {
       try {
-        // الذهاب لصفحة الستريمر مباشرة
-        await page.goto(`https://kick.com/${streamer.kickUsername.trim()}`, { waitUntil: 'networkidle2', timeout: 30000 });
-
-        // محاولة معرفة إذا كان لايف من خلال وجود كلمة "LIVE" في الصفحة
-        const isLive = await page.evaluate(() => {
-          return document.body.innerText.includes('LIVE') || !!document.querySelector('.v-badge.re-live');
+        await page.goto(`https://kick.com/${streamer.kickUsername.trim()}`, { 
+          waitUntil: 'networkidle2', 
+          timeout: 40000 
         });
 
-        streamer.isLive = isLive;
-        // إذا مش لايف، المشاهدين 0
-        streamer.viewers = isLive ? Math.floor(Math.random() * 100) + 1 : 0; 
+        // انتظر قليلاً لتحميل أرقام المشاهدين
+        await new Promise(r => setTimeout(r, 3000));
 
+        const streamData = await page.evaluate(() => {
+          // البحث عن علامة LIVE أو وجود مشغل الفيديو النشط
+          const liveBadge = document.querySelector('.v-badge.re-live') || 
+                            document.body.innerText.includes('LIVE');
+          
+          let count = 0;
+          if (liveBadge) {
+            // محاولة جلب الرقم من عدة أماكن محتملة في Kick
+            const viewerElement = document.querySelector('span[data-viewer-count]') || 
+                                  document.querySelector('.viewer-count-number') || 
+                                  document.querySelector('.v-badge span');
+            
+            if (viewerElement) {
+              count = parseInt(viewerElement.innerText.replace(/[^0-9]/g, '')) || 0;
+            }
+          }
+
+          return { isLive: !!liveBadge, viewers: count };
+        });
+
+        // تحديث قاعدة البيانات
+        streamer.isLive = streamData.isLive;
+        streamer.viewers = streamData.viewers;
         await streamer.save();
-        console.log(`✅ ${streamer.kickUsername} : ${streamer.isLive ? '🔴 LIVE' : '⚪ OFF'}`);
+
+        console.log(`✅ ${streamer.kickUsername} : ${streamer.isLive ? `🔴 LIVE (${streamer.viewers})` : '⚪ OFF'}`);
 
       } catch (err) {
-        console.log(`⚠️ فشل الوصول لصفحة ${streamer.kickUsername}`);
+        console.log(`⚠️ فشل فحص ${streamer.kickUsername}`);
       }
     }
   } catch (err) {
-    console.error("❌ خطأ في المتصفح:", err.message);
+    console.error("❌ خطأ عام في المتصفح:", err.message);
   } finally {
-    if (browser) await browser.close();
+    if (browser) {
+      await browser.close();
+      console.log("🔒 تم إغلاق المتصفح بنجاح.");
+    }
   }
 }
+
 
 
 // فحص الحالة كل دقيقتين (120000 مللي ثانية)
