@@ -7,6 +7,36 @@
     <title>Justice City | Hub الملكي</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
+        body::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 650px;
+    height: 650px;
+    background: url('/logo.png') no-repeat center;
+    background-size: contain;
+    opacity: 0.04;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    pointer-events: none;
+    filter: blur(0.5px) drop-shadow(0 0 60px rgba(212,175,55,0.3));
+}
+        body::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 550px;
+    height: 550px;
+    background: url('/logo.png') no-repeat center;
+    background-size: contain;
+    opacity: 0.06;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    pointer-events: none;
+    filter: drop-shadow(0 0 40px rgba(212,175,55,0.25));
+}
         /* تنسيق جعل النافذة تظهر في منتصف الشاشة تماماً */
 #apply-modal {
     position: fixed;
