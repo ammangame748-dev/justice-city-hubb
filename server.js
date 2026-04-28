@@ -34,49 +34,55 @@ const Application = mongoose.model('Application', new mongoose.Schema({
 }));
 
 
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 async function updateStatus() {
-  try {
-    const streamers = await Streamer.find({ kickUsername: { $ne: null } });
-    if (!streamers.length) return;
+  console.log("🔄 تحديث حالة الستريمرز...");
 
-    console.log(`🚀 جاري فحص حالة ${streamers.length} ستريمر...`);
+  const streamers = await Streamer.find({});
 
-    for (const streamer of streamers) {
-      const username = streamer.kickUsername.trim();
-      try {
-        // الرابط الصحيح والمباشر عبر البروكسي لتخطي الحماية وتصفير الحالة
-        const response = await fetch(`https://corsproxy.io/?https://kick.com/api/v1/channels/${username}`);
-        
-        if (response.ok) {
-          const data = await response.json();
+  for (const streamer of streamers) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
-          // إذا السيرفر رجع بيانات للبث بكون True، وإذا طفى البث بصير False فوراً
-          streamer.isLive = !!data.livestream;
-          
-          // تحديث عدد المشاهدات الحقيقي، وإذا مسكر بصير 0
-          streamer.viewers = data.livestream ? (data.livestream.viewer_count || 0) : 0;
-          
-          if (data.user && data.user.profile_pic) {
-            streamer.profilePic = data.user.profile_pic;
-          }
+      const res = await fetch(`https://kick.com/api/v2/channels/${streamer.kickUsername}`, {
+        signal: controller.signal
+      });
 
-          await streamer.save();
-          console.log(`✅ ${username} تم تحديثه | لايف: ${streamer.isLive} | مشاهدين: ${streamer.viewers}`);
-        } else {
-          console.log(`⚠️ كيك لم يستجب لـ ${username} (Status: ${response.status})`);
-        }
-      } catch (err) {
-        console.log(`❌ خطأ تقني في جلب بيانات ${username}`);
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        console.log(`⚠️ فشل جلب ${streamer.kickUsername}`);
+        continue;
       }
-      
-      // انتظار ثانية بين كل طلب لتجنب الحظر
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const data = await res.json();
+
+      if (!data || !data.channel) continue;
+
+      const isLive = data.channel.is_live;
+      const viewers = data.channel.viewer_count || 0;
+      const profilePic = data.channel?.user?.profile_pic || null;
+
+      await Streamer.updateOne(
+        { _id: streamer._id },
+        {
+          $set: {
+            isLive,
+            viewers,
+            profilePic
+          }
+        }
+      );
+
+      console.log(`✅ ${streamer.kickUsername} | Live: ${isLive} | 👁 ${viewers}`);
+
+    } catch (err) {
+      console.error(`❌ خطأ مع ${streamer.kickUsername}`, err.message);
     }
-  } catch (err) {
-    console.error("❌ خطأ عام في التحديث:", err.message);
   }
 }
-
 
 
 // فحص الحالة كل دقيقتين (30000 مللي ثانية)
