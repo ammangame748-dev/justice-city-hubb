@@ -1,61 +1,90 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const axios = require('axios');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
 puppeteer.use(StealthPlugin());
+const app = express();
 
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://hsamhmaydh4_db_user:xls5Av4Nr4a5PA7W@cluster0.wjnh8d0.mongodb.net/?appName=Cluster0"; 
+
+mongoose.connect(MONGO_URI).then(() => console.log('✅ متصل بالداتابيز')).catch(err => console.log(err));
+
+
+// تعريف الـ Models
+const Streamer = mongoose.model('KickConfig', new mongoose.Schema({
+    kickUsername: String,
+    isLive: { type: Boolean, default: false },
+    viewers: { type: Number, default: 0 },
+    profilePic: String
+}));
+
+const Application = mongoose.model('Application', new mongoose.Schema({
+    kickUsername: String,
+    discordName: String,
+    status: { type: String, default: 'pending' }
+}));
+
+// دالة التحديث المصححة
 async function updateStatus() {
-    console.log("🔍 جاري فحص حالة الستريمرز...");
-    const streamers = await Streamer.find({ kickUsername: { $ne: null, $exists: true } });
-    
-    if (streamers.length === 0) return console.log("⚠️ لا يوجد قنوات للفحص حالياً.");
+    let browser; 
+    try {
+        console.log("🔍 جاري فحص حالة الستريمرز...");
+        
+        const streamers = await Streamer.find({ kickUsername: { $ne: null, $exists: true } });
+        if (streamers.length === 0) {
+            console.log("ℹ️ لا يوجد ستريمرز للفحص.");
+            return;
+        }
 
-    const browser = await puppeteer.launch({
-        headless: "new", // ✅ ضروري جداً لتجنب الـ Crash في Render
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage', 
-            '--single-process',
-            '--no-zygote'
-        ],
-        // ✅ حذفنا المسار القديم واستبدلناه بمتغير البيئة التلقائي لـ Render
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null
-    });
+browser = await puppeteer.launch({
+    headless: "new",
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // عشان يقرأ المسار من رندر
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
 
 
+        const page = await browser.newPage();
+        
+        // --- حلقة لفحص كل ستريمر ---
+        for (const streamer of streamers) {
+            try {
+                // الكود هنا يذهب لصفحة الستريمر ويفحص حالته
+                await page.goto(`https://kick.com{streamer.kickUsername}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                
+                // مثال بسيط للفحص (هذا الجزء يعتمد على تصميم موقع Kick المتغير)
+                const isLive = await page.evaluate(() => {
+                    return document.body.innerText.includes('LIVE') || document.body.innerText.includes('مباشر');
+                });
 
-    const page = await browser.newPage();
+                streamer.isLive = isLive;
+                await streamer.save();
+                console.log(`✅ تم تحديث ${streamer.kickUsername}: ${isLive ? 'لايف 🔴' : 'أوفلاين ⚪'}`);
+                
+            } catch (err) {
+                console.log(`⚠️ فشل فحص الستريمر ${streamer.kickUsername}:`, err.message);
+            }
+        }
 
-    for (const s of streamers) {
-        try {
-            // ✅ تم تصحيح الرابط هنا بإضافة المسار الصحيح وعلامة الـ $
-            const url = `https://kick.com/api/v2/channels/${s.kickUsername.trim()}`;
-            await page.goto(`https://kick.com/api/v2/channels/${s.kickUsername.trim()}`, { waitUntil: 'networkidle2', timeout: 60000 });
-            
-            const content = await page.evaluate(() => document.querySelector('body').innerText);
-            const data = JSON.parse(content);
-
-            // ✅ التعديل هنا: سحبنا حالة البث، عدد المشاهدين، وصورة البروفايل
-            await Streamer.updateOne({ _id: s._id }, {
-                isLive: data.livestream ? true : false,
-                viewers: data.livestream ? data.livestream.viewer_count : 0,
-                profilePic: data.user ? data.user.profile_pic : null // جلب الصورة
-            });
-            
-            console.log(`✅ ${s.kickUsername} -> تم تحديث البيانات والصورة`);
-        } catch (e) {
-            console.log(`❌ فشل فحص: ${s.kickUsername} | السبب: ${e.message}`);
+    } catch (error) {
+        console.log("❌ خطأ عام في عملية الفحص:", error.message);
+    } finally {
+        // هذا الجزء يضمن إغلاق المتصفح دائماً ومنع استهلاك الرام
+        if (browser) {
+            await browser.close();
+            console.log("✨ انتهى الفحص وتم إغلاق المتصفح.");
         }
     }
-    await browser.close();
-    console.log("✨ انتهى الفحص.");
 }
 
 
 setInterval(updateStatus, 300000); // 300000 تساوي 5 دقائق
-const browser = await puppeteer.launch({
-    headless: "new", // ضروري جداً لتوفير الرام
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process']
-});
+
 
 // --- [ المسارات ] ---
 
@@ -130,7 +159,6 @@ app.get('/admin/accept/:id', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server is running on port ${PORT}`);
 });
-
