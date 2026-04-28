@@ -1,29 +1,3 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const axios = require('axios');
-const app = express();
-
-app.set('view engine', 'ejs');
-app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
-
-const MONGO_URI = "mongodb+srv://hsamhmaydh4_db_user:xls5Av4Nr4a5PA7W@cluster0.wjnh8d0.mongodb.net/?appName=Cluster0"; 
-
-mongoose.connect(MONGO_URI).then(() => console.log('✅ متصل بالداتابيز')).catch(err => console.log(err));
-
-const Streamer = mongoose.model('KickConfig', new mongoose.Schema({
-    kickUsername: String,
-    isLive: { type: Boolean, default: false },
-    viewers: { type: Number, default: 0 },
-    profilePic: String // ✅ أضف هذا السطر
-}));
-
-
-const Application = mongoose.model('Application', new mongoose.Schema({
-    kickUsername: String,
-    status: { type: String, default: 'pending' }
-}));
-
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
@@ -32,15 +6,21 @@ async function updateStatus() {
     console.log("🔍 جاري فحص حالة الستريمرز...");
     const streamers = await Streamer.find({ kickUsername: { $ne: null, $exists: true } });
     
- const browser = await puppeteer.launch({
-    args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage', // ضروري جداً لمنع الـ Crash في السيرفرات الضعيفة
-        '--single-process'         // يقلل استهلاك الذاكرة
-    ],
-    executablePath: process.env.NODE_ENV === 'production' ? '/usr/bin/google-chrome' : null
-});
+    if (streamers.length === 0) return console.log("⚠️ لا يوجد قنوات للفحص حالياً.");
+
+    const browser = await puppeteer.launch({
+        headless: "new", // ✅ ضروري جداً لتجنب الـ Crash في Render
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', 
+            '--single-process',
+            '--no-zygote'
+        ],
+        // ✅ حذفنا المسار القديم واستبدلناه بمتغير البيئة التلقائي لـ Render
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null
+    });
+
 
 
     const page = await browser.newPage();
