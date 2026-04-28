@@ -44,16 +44,16 @@ async function updateStatus() {
     for (const streamer of streamers) {
       const username = streamer.kickUsername.trim();
       try {
-        // استخدمنا البروكسي لأنه الوحيد اللي بيكسر حماية كيك عندك
+        // الرابط الصحيح والمباشر عبر البروكسي لتخطي الحماية وتصفير الحالة
         const response = await fetch(`https://corsproxy.io/?https://kick.com/api/v1/channels/${username}`);
         
         if (response.ok) {
           const data = await response.json();
 
-          // السطر اللي بحل مشكلتك: إذا data.livestream مش موجود، isLive بتصير false فوراً
+          // إذا السيرفر رجع بيانات للبث بكون True، وإذا طفى البث بصير False فوراً
           streamer.isLive = !!data.livestream;
           
-          // إذا فاتح بنحط المشاهدات، إذا مسكر بنصفر العداد
+          // تحديث عدد المشاهدات الحقيقي، وإذا مسكر بصير 0
           streamer.viewers = data.livestream ? (data.livestream.viewer_count || 0) : 0;
           
           if (data.user && data.user.profile_pic) {
@@ -61,17 +61,19 @@ async function updateStatus() {
           }
 
           await streamer.save();
-          console.log(`✅ ${username} تم تحديثه | لايف: ${streamer.isLive}`);
+          console.log(`✅ ${username} تم تحديثه | لايف: ${streamer.isLive} | مشاهدين: ${streamer.viewers}`);
+        } else {
+          console.log(`⚠️ كيك لم يستجب لـ ${username} (Status: ${response.status})`);
         }
       } catch (err) {
-        console.log(`⚠️ تعذر الوصول لبيانات ${username}`);
+        console.log(`❌ خطأ تقني في جلب بيانات ${username}`);
       }
       
-      // انتظار ثانية عشان كيك ما تحظر السيرفر
+      // انتظار ثانية بين كل طلب لتجنب الحظر
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   } catch (err) {
-    console.error("❌ خطأ في التحديث:", err.message);
+    console.error("❌ خطأ عام في التحديث:", err.message);
   }
 }
 
