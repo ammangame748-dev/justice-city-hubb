@@ -32,8 +32,7 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
-const axios = require('axios');
-
+// استبدل سطر الـ axios بهذا الكود (أو امسح سطر الـ axios تماماً)
 async function updateStatus() {
   try {
     const streamers = await Streamer.find({ kickUsername: { $ne: null } });
@@ -43,36 +42,38 @@ async function updateStatus() {
 
     for (const streamer of streamers) {
       try {
-        // طلب البيانات من API كيك المباشر
-        const response = await axios.get(`https://kick.com{streamer.kickUsername.trim()}`, {
+        // نستخدم fetch الأساسية في Node.js
+        const response = await fetch(`https://kick.com{streamer.kickUsername.trim()}`, {
           headers: { 
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           }
         });
 
-        const data = response.data;
+        if (response.ok) {
+          const data = await response.json();
 
-        // تحديث البيانات الحقيقية
-        streamer.isLive = !!data.livestream;
-        streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
-        
-        // جلب صورة البروفايل الأصلية
-        if (data.user && data.user.profile_pic) {
-          streamer.profilePic = data.user.profile_pic;
+          streamer.isLive = !!data.livestream;
+          streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
+          
+          if (data.user && data.user.profile_pic) {
+            streamer.profilePic = data.user.profile_pic;
+          }
+
+          await streamer.save();
+          console.log(`✅ تم تحديث ${streamer.kickUsername}`);
+        } else {
+          console.log(`⚠️ كيك رفض الطلب لـ ${streamer.kickUsername} (Status: ${response.status})`);
         }
 
-        await streamer.save();
-        console.log(`✅ ${streamer.kickUsername} -> ${streamer.isLive ? `🔴 مباشر (${streamer.viewers})` : '⚪ أوفلاين'}`);
-
       } catch (err) {
-        console.log(`⚠️ تعذر جلب ${streamer.kickUsername} (قد يكون الحساب خاص أو محمي)`);
+        console.log(`⚠️ خطأ في جلب بيانات ${streamer.kickUsername}`);
       }
     }
   } catch (err) {
-    console.error("❌ خطأ في السيرفر:", err.message);
+    console.error("❌ خطأ عام:", err.message);
   }
 }
+
 
 
 // فحص الحالة كل دقيقتين (120000 مللي ثانية)
