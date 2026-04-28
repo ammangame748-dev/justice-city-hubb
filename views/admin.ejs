@@ -5,41 +5,71 @@
     <title>لوحة التحكم | Justice City</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { background: #050505; color: white; font-family: 'Changa', sans-serif; padding: 20px; }
-        .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; }
-        .accept { background: #00ff99; color: black; }
-        .delete { background: #ff4444; color: white; }
-        h2 { color: #d4af37; border-bottom: 2px solid #d4af37; display: inline-block; }
+        body { background: #050505; color: white; font-family: 'Changa', sans-serif; padding: 40px; }
+        h2 { color: #d4af37; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 40px; background: rgba(20,20,20,0.8); }
+        th, td { padding: 15px; border: 1px solid rgba(212,175,55,0.2); text-align: center; }
+        th { background: #d4af37; color: black; }
+        .btn { padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; }
+        .btn-accept { background: #28a745; margin-left: 5px; }
+        .btn-reject { background: #dc3545; }
+        .btn-delete { background: #ff4d4d; border: none; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #d4af37; text-decoration: none; }
     </style>
 </head>
 <body>
-    <div style="max-width: 800px; margin: 0 auto;">
-        <h2>👑 لوحة طلبات الستريمرز</h2>
-        <% apps.forEach(app => { %>
-            <div class="card">
-                <div>
-                    <div>الستريمر: <span style="color:#d4af37"><%= app.kickUsername %></span></div>
-                </div>
-                <a href="/admin/accept/<%= app._id %>?pass=1234" class="btn accept">✅ قبول وإضافة</a>
-            </div>
-        <% }) %>
 
-        <h2 style="margin-top: 40px;">🚫 الستريمرز الحاليين (للحذف)</h2>
-        <p style="color: #666; font-size: 14px;">(لو فيه بطاقة فاضية بالموقع احذفها من هون)</p>
-        
-        <% if (typeof streamers !== 'undefined') { %>
-            <% streamers.forEach(s => { %>
-                <div class="card">
-                    <div>اسم الستريمر: <span style="color:#d4af37"><%= s.kickUsername || 'اسم فارغ ⚠️' %></span></div>
-                    <a href="/admin/delete-streamer/<%= s._id %>?pass=1234" class="btn delete">🗑️ حذف من الموقع</a>
+    <a href="/" class="back-link">🔙 العودة للموقع الرئيسي</a>
 
-                </div>
+    <h2>👑 طلبات الانضمام المعلقة (<%= apps.length %>)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>اسم الستريمر (Kick)</th>
+                <th>ديسكورد</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (apps.length === 0) { %>
+                <tr><td colspan="3">لا توجد طلبات جديدة حالياً</td></tr>
+            <% } %>
+            <% apps.forEach(app => { %>
+                <tr>
+                    <td><%= app.kickUsername %></td>
+                    <td><%= app.discordName %></td>
+                    <td>
+                        <a href="/admin/accept/<%= app._id %>?pass=1234" class="btn btn-accept">قبول ✅</a>
+                        <a href="/admin/reject/<%= app._id %>?pass=1234" class="btn btn-reject">رفض ❌</a>
+                    </td>
+                </tr>
             <% }) %>
-        <% } %>
+        </tbody>
+    </table>
 
-        <br><br>
-        <a href="/" style="color: #888; text-decoration: none;">🏠 العودة للموقع</a>
-    </div>
+    <h2>🚫 الستريمرز الحاليين في الموقع (<%= streamers.length %>)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>الصورة</th>
+                <th>الاسم</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% streamers.forEach(s => { %>
+                <tr>
+                    <td><img src="<%= s.profilePic %>" width="40" style="border-radius: 50%;"></td>
+                    <td><%= s.kickUsername %></td>
+                    <td><%= s.isLive ? '🔴 لايف' : '⚪ أوفلاين' %></td>
+                    <td>
+                        <a href="/admin/delete-streamer/<%= s._id %>?pass=1234" class="btn btn-reject" onclick="return confirm('متأكد بدك تحذفه؟')">حذف من الموقع 🗑️</a>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
 </body>
 </html>
