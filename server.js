@@ -55,18 +55,21 @@ browser = await puppeteer.launch({
         for (const streamer of streamers) {
             try {
                 // الكود هنا يذهب لصفحة الستريمر ويفحص حالته
-           await page.goto(`https://kick.com/${streamer.kickUsername}`, {
+await page.goto(`https://kick.com/${streamer.kickUsername}`, {
     waitUntil: 'networkidle2',
-    timeout: 30000
+    timeout: 60000 // زيد الوقت لـ 60 ثانية احتياطاً
 });
 
-                
+// أضف هذا السطر: انتظر 5 ثواني كاملة بعد التحميل لضمان ظهور علامة LIVE
+await new Promise(r => setTimeout(r, 5000)); 
+
 const isLive = await page.evaluate(() => {
-    const badge = document.querySelector('[data-a-target="livestream-badge"]');
-    const text = document.body.innerText.toLowerCase();
-    
-    return !!badge || text.includes('live');
+    // Kick حالياً بستخدم كلاسات مثل "bg-red-600" أو نصوص معينة داخل div
+    // البحث عن كلمة "LIVE" أو "مباشر" هو الأضمن
+    const bodyText = document.body.innerText;
+    return bodyText.includes('LIVE') || bodyText.includes('مباشر');
 });
+
 
                 streamer.isLive = isLive;
                 await streamer.save();
