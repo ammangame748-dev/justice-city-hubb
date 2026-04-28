@@ -73,7 +73,7 @@ await page.evaluate(() => window.scrollBy(0, -500));
 
 
 const streamData = await page.evaluate(() => {
-    // 1. فحص الحالة (LIVE) - الطريقة الأضمن هي البحث عن كلمة "LIVE" في عناصر معينة
+    // فحص الحالة LIVE
     const isLive = !!document.querySelector('.v-badge.re-live') || 
                    !!document.querySelector('[data-is-live="true"]') ||
                    document.body.innerText.includes('LIVE');
@@ -81,23 +81,19 @@ const streamData = await page.evaluate(() => {
     let count = 0;
     let profileImg = "";
 
-    // 2. جلب عدد المشاهدين (تحديث الـ Selectors)
+    // سحب المشاهدات - Selector جديد وأدق
     const viewerElement = document.querySelector('span[data-viewer-count]') || 
-                          document.querySelector('.v-badge span') ||
-                          document.querySelector('#video-player-viewer-count');
-    
+                          document.querySelector('.v-badge span');
     if (viewerElement) {
         count = parseInt(viewerElement.innerText.replace(/[^0-9]/g, '')) || 0;
     }
 
-    // 3. جلب صورة البروفايل - استهداف أدق
-    // نبحث عن الصورة اللي الـ Alt تبعها هو اسم القناة أو تحتوي على كلاسات معينة
-    const imgElement = document.querySelector('img.object-cover.rounded-full') || 
-                       document.querySelector('img[alt*="avatar"]') ||
-                       document.querySelector('.profile-picture img');
+    // سحب الصورة - البحث في كل الصور عن رابط يحتوي على 'user_assets'
+    const images = Array.from(document.querySelectorAll('img'));
+    const profileImgObj = images.find(img => img.src.includes('user_assets') || img.classList.contains('object-cover'));
     
-    if (imgElement && imgElement.src) {
-        profileImg = imgElement.src;
+    if (profileImgObj) {
+        profileImg = profileImgObj.src;
     }
 
     return { isLive, viewers: count, profilePic: profileImg };
