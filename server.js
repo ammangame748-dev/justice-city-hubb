@@ -56,8 +56,10 @@ async function updateStatus() {
           timeout: 60000 
         });
 
-        // زيادة وقت الانتظار لضمان تحميل أرقام المشاهدين والصور
-        await new Promise(r => setTimeout(r, 6000));
+ // قبل الدخول في evaluate، أضف هذا التفاعل الحقيقي
+await page.mouse.move(Math.random() * 500, Math.random() * 500); // حركة عشوائية
+await new Promise(r => setTimeout(r, 8000)); // انتظر 8 ثواني لضمان ظهور الرقم
+
 
         const streamData = await page.evaluate(() => {
           // 1. فحص الحالة (LIVE)
