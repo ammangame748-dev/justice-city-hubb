@@ -30,62 +30,64 @@ const Application = mongoose.model('Application', new mongoose.Schema({
     status: { type: String, default: 'pending' }
 }));
 
-// دالة التحديث المصححة
 async function updateStatus() {
     let browser; 
     try {
         console.log("🔍 جاري فحص حالة الستريمرز...");
         
         const streamers = await Streamer.find({ kickUsername: { $ne: null, $exists: true } });
-        if (streamers.length === 0) {
-            console.log("ℹ️ لا يوجد ستريمرز للفحص.");
-            return;
-        }
+        if (streamers.length === 0) return;
 
-browser = await puppeteer.launch({
-    headless: "new",
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // عشان يقرأ المسار من رندر
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-});
-
+        browser = await puppeteer.launch({
+            headless: "new",
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
 
         const page = await browser.newPage();
         
-for (const streamer of streamers) {
-    try {
-        // نستخدم API داخلي من كيك مباشرة
-        const response = await axios.get(`https://kick.com/api/v2/channels/${streamer.kickUsername.trim()}`, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+        // تعيين User-Agent واقعي للمتصفح ككل
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+
+        for (const streamer of streamers) {
+            try {
+                // نستخدم المتصفح لزيارة الرابط بدلاً من axios
+                const url = `https://kick.com/api/v2/channels/${streamer.kickUsername.trim()}`;
+                
+                await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+
+                // استخراج النص (JSON) من الصفحة
+                const content = await page.evaluate(() => document.querySelector("pre").innerText);
+                const data = JSON.parse(content);
+                
+                streamer.isLive = !!data.livestream;
+                streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
+                streamer.profilePic = data.user.profile_pic;
+                
+                await streamer.save();
+                console.log(`✅ ${streamer.kickUsername}: ${streamer.isLive ? '🔴 لايف (' + streamer.viewers + ')' : '⚪ أوفلاين'}`);
+
+                // انتظار بسيط بين كل ستريمر وآخر لتجنب الحظر
+                await new Promise(r => setTimeout(r, 2000));
+
+            } catch (err) {
+                console.log(`⚠️ فشل فحص ${streamer.kickUsername}: قد يكون البروفايل خاص أو هناك حماية`);
+                // تأكد من جعل الحالة أوفلاين إذا فشل الفحص تماماً لتجنب تعليق الستاتوس
+                streamer.isLive = false;
+                await streamer.save();
             }
-        });
-
-        const data = response.data;
-        
-        // تحديث البيانات بناءً على استجابة الـ API
-        streamer.isLive = !!data.livestream; // إذا كان هناك livestream فهو لايف
-        streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
-        streamer.profilePic = data.user.profile_pic;
-        
-        await streamer.save();
-        console.log(`✅ ${streamer.kickUsername}: ${streamer.isLive ? '🔴 لايف (' + streamer.viewers + ')' : '⚪ أوفلاين'}`);
-
-    } catch (err) {
-        console.log(`⚠️ فشل فحص ${streamer.kickUsername}: بانتظار المحاولة القادمة (قد يكون بسبب الحماية)`);
-    }
-}
-
+        }
 
     } catch (error) {
         console.log("❌ خطأ عام في عملية الفحص:", error.message);
     } finally {
-        // هذا الجزء يضمن إغلاق المتصفح دائماً ومنع استهلاك الرام
         if (browser) {
             await browser.close();
             console.log("✨ انتهى الفحص وتم إغلاق المتصفح.");
         }
     }
 }
+
 
 
 setInterval(updateStatus, 300000); // 300000 تساوي 5 دقائق
