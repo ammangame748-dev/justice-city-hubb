@@ -41,55 +41,63 @@ async function updateStatus() {
 
     console.log(`🔍 جاري فحص ${streamers.length} ستريمر عبر المتصفح...`);
 
-    // تشغيل المتصفح مع إعدادات لتجنب الحظر
     browser = await puppeteer.launch({ 
       headless: "new", 
       args: ['--no-sandbox', '--disable-setuid-sandbox'] 
     });
     
     const page = await browser.newPage();
-    // إيهام الموقع أنك متصفح حقيقي
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
     for (const streamer of streamers) {
       try {
         await page.goto(`https://kick.com/${streamer.kickUsername.trim()}`, { 
           waitUntil: 'networkidle2', 
-          timeout: 40000 
+          timeout: 60000 
         });
 
-        // انتظر قليلاً لتحميل أرقام المشاهدين
-        await new Promise(r => setTimeout(r, 3000));
+        // زيادة وقت الانتظار لضمان تحميل أرقام المشاهدين والصور
+        await new Promise(r => setTimeout(r, 6000));
 
         const streamData = await page.evaluate(() => {
-          // البحث عن علامة LIVE أو وجود مشغل الفيديو النشط
-          const liveBadge = document.querySelector('.v-badge.re-live') || 
-                            document.body.innerText.includes('LIVE');
+          // 1. فحص الحالة (LIVE)
+          const isLive = document.body.innerText.includes('LIVE') || 
+                         !!document.querySelector('.v-badge.re-live') || 
+                         !!document.querySelector('.absolute.top-2.left-2.bg-red-600');
           
           let count = 0;
-          if (liveBadge) {
-            // محاولة جلب الرقم من عدة أماكن محتملة في Kick
-            const viewerElement = document.querySelector('span[data-viewer-count]') || 
-                                  document.querySelector('.viewer-count-number') || 
-                                  document.querySelector('.v-badge span');
-            
-            if (viewerElement) {
-              count = parseInt(viewerElement.innerText.replace(/[^0-9]/g, '')) || 0;
-            }
+          let profileImg = "";
+
+          // 2. جلب عدد المشاهدين (استهداف الـ ID والـ Classes الجديدة)
+          const viewerElement = document.querySelector('#video-player-viewer-count') || 
+                                document.querySelector('.v-badge span') ||
+                                document.querySelector('span[data-viewer-count]');
+          
+          if (viewerElement) {
+            count = parseInt(viewerElement.innerText.replace(/[^0-9]/g, '')) || 0;
           }
 
-          return { isLive: !!liveBadge, viewers: count };
+          // 3. جلب صورة البروفايل (عشان ما تطلع مكسورة)
+          const imgElement = document.querySelector('img[class*="profile"]') || 
+                             document.querySelector('img[alt*="Avatar"]') ||
+                             document.querySelector('img.object-cover');
+          
+          if (imgElement) profileImg = imgElement.src;
+
+          return { isLive, viewers: count, profilePic: profileImg };
         });
 
         // تحديث قاعدة البيانات
         streamer.isLive = streamData.isLive;
-        streamer.viewers = streamData.viewers;
+        streamer.viewers = streamData.isLive ? streamData.viewers : 0;
+        if (streamData.profilePic) streamer.profilePic = streamData.profilePic;
+        
         await streamer.save();
 
         console.log(`✅ ${streamer.kickUsername} : ${streamer.isLive ? `🔴 LIVE (${streamer.viewers})` : '⚪ OFF'}`);
 
       } catch (err) {
-        console.log(`⚠️ فشل فحص ${streamer.kickUsername}`);
+        console.log(`⚠️ فشل فحص ${streamer.kickUsername}: ${err.message}`);
       }
     }
   } catch (err) {
@@ -97,10 +105,11 @@ async function updateStatus() {
   } finally {
     if (browser) {
       await browser.close();
-      console.log("🔒 تم إغلاق المتصفح بنجاح.");
+      console.log("🔒 تم إغلاق المتصفح.");
     }
   }
 }
+
 
 
 
