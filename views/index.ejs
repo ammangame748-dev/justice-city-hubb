@@ -1,460 +1,347 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-   <link rel="icon" type="image/png" href="/logo.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Justice City | Hub الملكي</title>
-    <link href="https://googleapis.com" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Justice City Hub | Reborn</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Particles -->
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+
     <style>
-        body::before {
-    content: "";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 650px;
-    height: 650px;
-    background: url('/logo.png') no-repeat center;
-    background-size: contain;
-    opacity: 0.04;
-    transform: translate(-50%, -50%);
-    z-index: -1;
-    pointer-events: none;
-    filter: blur(0.5px) drop-shadow(0 0 60px rgba(212,175,55,0.3));
-}
-        body::before {
-    content: "";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 550px;
-    height: 550px;
-    background: url('/logo.png') no-repeat center;
-    background-size: contain;
-    opacity: 0.06;
-    transform: translate(-50%, -50%);
-    z-index: -1;
-    pointer-events: none;
-    filter: drop-shadow(0 0 40px rgba(212,175,55,0.25));
-}
-        /* تنسيق جعل النافذة تظهر في منتصف الشاشة تماماً */
-#apply-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8); /* خلفية سوداء شفافة */
-    display: none; /* مخفي افتراضياً */
-    justify-content: center;
-    align-items: center;
-    z-index: 2000; /* أعلى من كل شيء */
-    backdrop-filter: blur(5px);
-}
-
-        .btn-support {
-    background: rgba(212, 175, 55, 0.1);
-    color: #d4af37 !important;
-    border: 1px dashed #d4af37;
-    text-decoration: none;
-    margin-left: 20px;
-    font-weight: bold;
-    padding: 8px 20px;
-    border-radius: 8px;
-    transition: 0.3s;
-}
-
-.btn-support:hover {
-    background: #d4af37;
-    color: black !important;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-    border-style: solid;
-}
-
-       /* الحاوية الرئيسية للإحصائيات عشان تصفهم جنب بعض */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* هاد السطر بجبرهم يصفوا 3 جنب بعض */
-    gap: 20px;
-    margin: 40px auto;
-    width: 100%;
-    max-width: 1200px;
-    padding: 0 20px;
-    box-sizing: border-box;
-}
-
-.stat-box {
-    background: rgba(15, 15, 15, 0.9);
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    border-radius: 15px;
-    padding: 25px;
-    text-align: center;
-    transition: 0.3s;
-}
-
-.stat-box:hover {
-    border-color: #d4af37;
-    transform: translateY(-5px);
-}
-
-.stat-number {
-    font-size: 32px;
-    font-weight: bold;
-    color: #fff;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.stat-desc {
-    color: #888;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-/* للموبايل عشان ما يخرب الشكل */
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-/* حركة نبض للستريمر النشط */
-.live-pulse {
-    border-color: rgba(0, 255, 153, 0.2);
-}
-.live-pulse:hover {
-    border-color: #00ff99;
-}
-
-        :root {
-            --bg: #050505;
-            --gold: linear-gradient(45deg, #d4af37, #f9f295, #d4af37);
-            --card-bg: rgba(20, 20, 20, 0.8);
-            --neon-gold: 0 0 15px rgba(212, 175, 55, 0.5);
+        :root{
+            --bg:#050608;
+            --panel:#0e0f14;
+            --panel2:#12141c;
+            --gold:#d4af37;
+            --gold2:#f9f295;
+            --text:#ffffff;
+            --muted:#8a8f98;
+            --green:#00ff99;
+            --red:#ff3b3b;
+            --border:rgba(212,175,55,0.25);
+            --shadow:0 0 25px rgba(212,175,55,0.25);
         }
 
-        body { margin: 0; font-family: 'Changa', sans-serif; background: var(--bg); color: white; overflow-x: hidden; }
-      #tsparticles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    background-color: #050505;
-}
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Changa',sans-serif;
+        }
 
-        nav {
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 50px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        body{
+            background:var(--bg);
+            color:var(--text);
+            overflow-x:hidden;
         }
-        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: bold; padding: 8px 20px; border-radius: 8px; transition: 0.3s; }
-        .btn-apply { border: 1px solid #d4af37; color: #d4af37 !important; }
-        .btn-apply:hover { background: #d4af37; color: black !important; }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        /* particles */
+        #tsparticles{
+            position:fixed;
+            inset:0;
+            z-index:-1;
+        }
 
-        .podium { display: flex; justify-content: center; align-items: flex-end; gap: 20px; margin: 60px 0 100px 0; padding-bottom: 20px; }
-        .podium-card { background: var(--card-bg); border-radius: 20px; width: 250px; text-align: center; padding: 30px 15px; position: relative; border-top: 4px solid; transition: 0.5s; }
-        .podium-card.first { height: 350px; border-color: #f9f295; box-shadow: var(--neon-gold); z-index: 2; }
-        .podium-card.second { height: 280px; border-color: #d7dde8; }
-        .podium-card.third { height: 230px; border-color: #f0be99; }
-        .medal { font-size: 50px; margin-bottom: 10px; display: block; }
+        /* top nav */
+        nav{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:15px 40px;
+            background:rgba(10,10,10,0.7);
+            backdrop-filter:blur(12px);
+            border-bottom:1px solid var(--border);
+            position:sticky;
+            top:0;
+            z-index:999;
+        }
 
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-            gap: 20px; 
-            margin-top: 50px; 
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:12px;
         }
-        .card { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(10px); 
-            border-radius: 20px; 
-            padding: 25px 15px; 
-            text-align: center; 
-            border: 1px solid rgba(192, 192, 192, 0.1); 
-            transition: 0.5s; 
-            position: relative; 
+
+        .brand img{
+            width:45px;
+            height:45px;
+            border-radius:10px;
+            box-shadow:var(--shadow);
         }
-        .card:hover { transform: translateY(-10px); border-color: #d4af37; box-shadow: var(--neon-gold); }
-        .card.live { border: 1px solid #d4af37; }
-        .avatar { 
-            width: 90px; 
-            height: 90px; 
-            border-radius: 50%; 
-            margin-bottom: 15px; 
-            border: 3px solid #757f9a; 
-            object-fit: cover;
+
+        .brand h1{
+            font-size:18px;
+            background:linear-gradient(45deg,var(--gold),var(--gold2));
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
         }
-        .card.live .avatar { border-color: #d4af37; filter: drop-shadow(0 0 8px #d4af37); }
-        .btn { 
-            background: var(--gold); 
-            color: #000; 
-            text-decoration: none; 
-            padding: 10px 25px; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            display: block; 
-            margin-top: 15px; 
-            text-align: center;
-            font-size: 14px;
+
+        .nav-links a{
+            margin-right:12px;
+            text-decoration:none;
+            color:var(--text);
+            padding:8px 14px;
+            border-radius:10px;
+            font-weight:600;
+            transition:.3s;
         }
-/* تنسيق أزرار الفلترة بألوان الموقع الذهبية */
-.filter-container {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin: 30px 0;
-}
-.filter-btn {
-    background: rgba(20, 20, 20, 0.8);
-    color: #d4af37;
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    padding: 10px 30px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: 'Changa';
-    font-weight: bold;
-    transition: 0.3s;
-}
-.filter-btn.active, .filter-btn:hover {
-    background: var(--gold); /* اللون الذهبي تبع موقعك */
-    color: black;
-    box-shadow: var(--neon-gold);
-    border-color: transparent;
-}
+
+        .nav-links a:hover{
+            background:rgba(212,175,55,0.15);
+        }
+
+        .btn-gold{
+            border:1px solid var(--gold);
+            color:var(--gold)!important;
+        }
+
+        /* hero stats */
+        .stats{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:20px;
+            max-width:1100px;
+            margin:40px auto;
+            padding:0 20px;
+        }
+
+        .stat{
+            background:linear-gradient(145deg,var(--panel),var(--panel2));
+            padding:25px;
+            border-radius:16px;
+            border:1px solid var(--border);
+            text-align:center;
+            transition:.3s;
+        }
+
+        .stat:hover{
+            transform:translateY(-5px);
+            box-shadow:var(--shadow);
+        }
+
+        .stat h2{
+            font-size:28px;
+            color:var(--gold2);
+        }
+
+        .stat p{
+            color:var(--muted);
+            margin-top:5px;
+        }
+
+        /* filters */
+        .filters{
+            display:flex;
+            justify-content:center;
+            gap:10px;
+            margin:20px 0;
+        }
+
+        .filters button{
+            padding:10px 18px;
+            border-radius:10px;
+            border:1px solid var(--border);
+            background:var(--panel);
+            color:var(--text);
+            cursor:pointer;
+            transition:.3s;
+        }
+
+        .filters button.active,
+        .filters button:hover{
+            background:var(--gold);
+            color:#000;
+        }
+
+        /* grid */
+        .grid{
+            max-width:1200px;
+            margin:30px auto;
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+            gap:18px;
+            padding:0 20px;
+        }
+
+        .card{
+            background:linear-gradient(145deg,var(--panel),var(--panel2));
+            padding:20px;
+            border-radius:18px;
+            text-align:center;
+            border:1px solid rgba(255,255,255,0.05);
+            transition:.3s;
+            position:relative;
+        }
+
+        .card:hover{
+            transform:translateY(-8px);
+            box-shadow:var(--shadow);
+            border-color:var(--gold);
+        }
+
+        .card.live{
+            border:1px solid var(--green);
+            box-shadow:0 0 15px rgba(0,255,153,0.2);
+        }
+
+        .avatar{
+            width:80px;
+            height:80px;
+            border-radius:50%;
+            object-fit:cover;
+            border:2px solid var(--gold);
+            margin-bottom:10px;
+        }
+
+        .live-badge{
+            position:absolute;
+            top:10px;
+            left:10px;
+            background:var(--green);
+            color:#000;
+            padding:4px 8px;
+            font-size:11px;
+            border-radius:6px;
+            font-weight:bold;
+        }
+
+        .btn{
+            display:inline-block;
+            margin-top:10px;
+            padding:8px 14px;
+            border-radius:10px;
+            background:linear-gradient(45deg,var(--gold),var(--gold2));
+            color:#000;
+            text-decoration:none;
+            font-weight:bold;
+            font-size:13px;
+        }
+
+        /* modal */
+        .modal{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.8);
+            display:none;
+            align-items:center;
+            justify-content:center;
+        }
+
+        .modal-content{
+            background:var(--panel);
+            padding:25px;
+            border-radius:15px;
+            width:350px;
+            border:1px solid var(--gold);
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            border-radius:10px;
+            border:1px solid var(--border);
+            background:#000;
+            color:#fff;
+        }
+
+        /* podium */
+        .podium{
+            display:flex;
+            justify-content:center;
+            gap:15px;
+            margin:50px 0;
+        }
+
+        .pod{
+            background:var(--panel);
+            padding:20px;
+            border-radius:15px;
+            width:200px;
+            text-align:center;
+            border-top:3px solid var(--gold);
+        }
 
     </style>
-    <!-- حط هاد السطر قبل </head> -->
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
-
 </head>
 <body>
 
-    <div id="tsparticles"></div>
-
+<div id="tsparticles"></div>
 
 <nav>
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <!-- هون بنادي الصورة اللي حطيتها بمجلد public -->
-        <img src="/logo.png" style="width: 55px; height: 55px; border-radius: 10px; object-fit: cover; filter: drop-shadow(0 0 5px #d4af37);">
-
-        
-        <span style="background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 24px; font-weight: bold; font-family: 'Changa';">
-            JUSTICE CITY HUB
-        </span>
+    <div class="brand">
+        <img src="/logo.png" />
+        <h1>JUSTICE CITY</h1>
     </div>
-    
+
     <div class="nav-links">
-            <a href="https://paypal.me/HosamHamaideh" target="_blank" class="btn-support">☕ ادعم المشروع</a>
-        <a href="javascript:void(0)" onclick="toggleRankings()">🏆 المتصدرين</a>
-        <a href="javascript:void(0)" onclick="openModal()" class="btn-apply">🔗 أضف قناتك</a>
+        <a class="btn-gold" href="#" onclick="openModal()">أضف قناتك</a>
     </div>
 </nav>
 
-<div class="filter-container">
-    <button onclick="filterStreamers('all', event)" class="filter-btn active">الكل</button>
-    <button onclick="filterStreamers('live', event)" class="filter-btn">البث المباشر</button>
-    <button onclick="filterStreamers('offline', event)" class="filter-btn">غير متصل</button>
+<div class="stats">
+    <div class="stat">
+        <h2><%= stats.totalStreamers %></h2>
+        <p>ستريمرز</p>
+    </div>
+    <div class="stat">
+        <h2><%= stats.totalViewers %></h2>
+        <p>مشاهدات</p>
+    </div>
+    <div class="stat">
+        <h2 style="color:var(--green)"><%= stats.liveNow %></h2>
+        <p>مباشر الآن</p>
+    </div>
 </div>
 
-
-    <div class="container">
-        <!-- تعديل هذا السطر ليصبح مخفياً في البداية -->
-<div id="rankings" class="animate" style="text-align: center; margin-top: 40px; display: none;">
-
-            <h1 style="background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 50px;">نخبة الستريمرز</h1>
-            <div class="podium">
-                <div class="podium-card second">
-                    <span class="medal">🥈</span>
-                    <h3 style="color: #d7dde8;">المركز الثاني</h3>
-                    <p style="color: #666;">قريباً..</p>
-                </div>
-                <div class="podium-card first">
-                    <span class="medal">🥇</span>
-                    <h2 style="color: #f9f295; font-size: 30px;">المركز الأول</h2>
-                    <p style="color: #888;">ملك البثوث</p>
-                </div>
-                <div class="podium-card third">
-                    <span class="medal">🥉</span>
-                    <h3 style="color: #f0be99;">المركز الثالث</h3>
-                    <p style="color: #666;">في طريق القمة</p>
-                </div>
-            </div>
-        </div>
-
-</div>
-<div class="stats-grid">
-    <!-- كرت 1 -->
-    <div class="stat-box">
-        <div class="stat-content">
-            <span class="stat-number"><%= stats.totalStreamers %></span>
-            <span class="stat-desc">إجمالي الستريمرز</span>
-        </div>
-    </div>
-
-    <!-- كرت 2 -->
-    <div class="stat-box">
-        <div class="stat-content">
-            <span class="stat-number"><%= stats.totalViewers %></span>
-            <span class="stat-desc">مشاهد حالياً</span>
-        </div>
-    </div>
-
-    <!-- كرت 3 -->
-    <div class="stat-box">
-        <div class="stat-content">
-            <span class="stat-number" style="color: #00ff99;"><%= stats.liveNow %></span>
-            <span class="stat-desc">ستريمر نشط الآن</span>
-        </div>
-    </div>
-</div> <!-- القفلة هاي هي اللي كانت ناقصة عندك ومخربة الدنيا -->
-
-
-
-
- <div class="grid">
-    <% if (streamers && streamers.length > 0) { %>
-        <% streamers.forEach(function(s) { %>
-            <!-- استخدمنا s بدل streamer لأنك عرفتها في الـ function(s) -->
-            <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
-                
-                <!-- تصليح رابط الصورة وصورة احتياطية في حال الفشل -->
-                <img src="<%= (s.profilePic && s.profilePic !== '') ? s.profilePic : '/logo.png' %>" 
-                     class="avatar" 
-                     alt="avatar"
-                     onerror="this.src='/logo.png'">
-
-                <h3 style="margin: 10px 0;"><%= s.kickUsername %></h3>
-
-                <% if (s.isLive) { %>
-                    <div style="color: #00ff99; font-weight: bold; margin-bottom: 10px;">
-                         🔴 مباشر الآن
-                         <br>
-                         <span style="font-size: 14px; color: #d4af37;">👀 <%= s.viewers %> مشاهد</span>
-                    </div>
-                <% } else { %>
-                    <div style="color: #666; margin-bottom: 10px;">غير متصل</div>
-                <% } %>
-
-                <!-- تصليح رابط القناة (إضافة السلاش /) -->
-                <a href="https://kick.com<%= s.kickUsername %>" target="_blank" class="btn">
-                    <%= s.isLive ? 'دخول البث' : 'دخول القناة' %>
-                </a>
-            </div>
-        <% }); %>
-    <% } else { %>
-        <div style="text-align:center; color:#777; font-size:20px; grid-column: 1 / -1;">🚫 لا يوجد ستريمرز حالياً</div>
-    <% } %>
+<div class="filters">
+    <button onclick="filter('all')" class="active">الكل</button>
+    <button onclick="filter('live')">مباشر</button>
+    <button onclick="filter('offline')">أوفلاين</button>
 </div>
 
+<div class="grid">
+    <% streamers.forEach(s => { %>
+        <div class="card <%= s.isLive ? 'live' : '' %>">
+            <% if(s.isLive){ %>
+                <div class="live-badge">LIVE</div>
+            <% } %>
+
+            <img class="avatar" src="<%= s.profilePic || '/logo.png' %>" />
+            <h3><%= s.kickUsername %></h3>
+            <p style="color:#888"><%= s.isLive ? s.viewers + ' مشاهدة' : 'غير مباشر' %></p>
+            <a class="btn" href="https://kick.com/<%= s.kickUsername %>">دخول</a>
         </div>
+    <% }) %>
+</div>
+
+<!-- modal -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3>إضافة قناة</h3>
+        <form action="/apply" method="POST">
+            <input name="kickUser" placeholder="اسم القناة" />
+            <button class="btn" type="submit">إرسال</button>
+        </form>
     </div>
-    <!-- نافذة أضف قناتك -->
-    <div id="apply-modal" style="display: none;">
-        <div class="card" style="width: 380px; border: 2px solid #d4af37; padding: 30px; position: relative;">
-            <h2 style="color: #d4af37; margin-bottom: 20px;">🔗 أضف قناتك</h2>
-            <form action="/apply" method="POST">
-                <input type="text" name="kickUser" placeholder="اسم قناتك في Kick" required 
-                       style="display: block; width: 100%; box-sizing: border-box; padding: 15px; margin-bottom: 15px; background: #000; color: #fff; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; font-family: 'Changa'; text-align: center;">
-                
-                <button type="submit" class="btn" style="width: 100%; cursor: pointer; border: none;">إرسال الطلب</button>
-                
-                <button type="button" onclick="closeModal()" 
-                        style="background: none; color: #777; border: none; margin-top: 15px; cursor: pointer; font-family: 'Changa'; font-size: 14px;">
-                    إغلاق النافذة
-                </button>
-            </form>
-        </div>
-    </div>
+</div>
 
-    <!-- السكريبت الموحد لكل الوظائف -->
-    <script>
-function filterStreamers(type, event) {
-    // 1. تحديث شكل الأزرار (إزالة active من الكل وإضافتها للزر المضغطوط)
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    if (event) {
-        event.currentTarget.classList.add('active');
-    }
-
-    // 2. جلب كل الكروت الموجودة داخل الـ grid
-    const cards = document.querySelectorAll('.grid .card');
-    
-    cards.forEach(card => {
-        // فحص هل الكرت يحتوي على كلاس live (اللي أنت ضايفه أصلاً في EJS)
-        const isLive = card.classList.contains('live');
-
-        if (type === 'all') {
-            card.style.display = 'block'; // إظهار الكل
-        } else if (type === 'live') {
-            card.style.display = isLive ? 'block' : 'none'; // إظهار اللايف فقط
-        } else if (type === 'offline') {
-            card.style.display = !isLive ? 'block' : 'none'; // إظهار الأوفلاين فقط
-        }
-    });
-
-    console.log("Filtering done for:", type); // للتأكد في Console المتصفح
+<script>
+function openModal(){
+    document.getElementById('modal').style.display='flex';
 }
-
-
-        // وظائف النافذة المنبثقة (Modal)
-        function openModal() { 
-            document.getElementById('apply-modal').style.display = 'flex'; 
-        }
-        
-        function closeModal() { 
-            document.getElementById('apply-modal').style.display = 'none'; 
-        }
-
-        // وظيفة إظهار وإخفاء المتصدرين (Rankings)
-        function toggleRankings() {
-            const rankings = document.getElementById('rankings');
-            // التأكد من حالة العرض الحالية
-            if (rankings.style.display === 'none' || rankings.style.display === '') {
-                rankings.style.display = 'block';
-                // نزول تلقائي للقسم عند فتحه
-                rankings.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                rankings.style.display = 'none';
-            }
-        }
-
-        // إغلاق النافذة عند الضغط خارجها (اختياري لزيادة الاحترافية)
-        window.onclick = function(event) {
-            const modal = document.getElementById('apply-modal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-    </script>
-    <script>
-async function loadParticles() {
-    await tsParticles.load("tsparticles", {
-        particles: {
-            number: { value: 80 },
-            color: { value: ["#ff7b00", "#d4af37"] },
-            shape: { type: "circle" },
-            opacity: { value: 0.4 },
-            size: { value: { min: 1, max: 3 } },
-          move: {
-    enable: true,
-    speed: 1.5,
-    direction: "top",
-    random: true,
-    outModes: { default: "out" }
-}
-        },
-        background: {
-            color: "#050505"
-        }
+function filter(type){
+    document.querySelectorAll('.card').forEach(c=>{
+        if(type==='all') c.style.display='block';
+        if(type==='live') c.style.display=c.classList.contains('live')?'block':'none';
+        if(type==='offline') c.style.display=!c.classList.contains('live')?'block':'none';
     });
 }
 
-loadParticles();
-loadParticles();
 </script>
 
 </body>
