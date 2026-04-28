@@ -32,98 +32,47 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
+const axios = require('axios');
 
 async function updateStatus() {
-  let browser;
   try {
     const streamers = await Streamer.find({ kickUsername: { $ne: null } });
     if (!streamers.length) return;
 
-    console.log(`🔍 جاري فحص ${streamers.length} ستريمر عبر المتصفح...`);
-
-    browser = await puppeteer.launch({ 
-      headless: "new", 
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
-    });
-    
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    console.log(`🔍 جاري التحديث الذكي لـ ${streamers.length} ستريمر...`);
 
     for (const streamer of streamers) {
       try {
-        await page.goto(`https://kick.com/${streamer.kickUsername.trim()}`, { 
-          waitUntil: 'networkidle2', 
-          timeout: 60000 
+        // طلب البيانات من API كيك المباشر
+        const response = await axios.get(`https://kick.com{streamer.kickUsername.trim()}`, {
+          headers: { 
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+          }
         });
 
- // قبل الدخول في evaluate، أضف هذا التفاعل الحقيقي
-await page.mouse.move(Math.random() * 500, Math.random() * 500); // حركة عشوائية
-await new Promise(r => setTimeout(r, 8000)); // انتظر 8 ثواني لضمان ظهور الرقم
-// انتظر حتى يظهر عنصر الفيديو أو عدد المشاهدات
-try {
-    await page.waitForSelector('span[data-viewer-count]', { timeout: 15000 });
-} catch (e) {
-    console.log("⏱️ تأخر تحميل عدد المشاهدين، سأحاول جلب البيانات المتاحة.");
-}
+        const data = response.data;
 
-// عمل Scroll خفيف للأعلى والأسفل لتحفيز تحميل الصور (Lazy Load)
-await page.evaluate(() => window.scrollBy(0, 500));
-await new Promise(r => setTimeout(r, 2000));
-await page.evaluate(() => window.scrollBy(0, -500));
-
-
-const streamData = await page.evaluate(() => {
-    // فحص الحالة LIVE
-    const isLive = !!document.querySelector('.v-badge.re-live') || 
-                   !!document.querySelector('[data-is-live="true"]') ||
-                   document.body.innerText.includes('LIVE');
-
-    let count = 0;
-    let profileImg = "";
-
-    // سحب المشاهدات - Selector جديد وأدق
-    const viewerElement = document.querySelector('span[data-viewer-count]') || 
-                          document.querySelector('.v-badge span');
-    if (viewerElement) {
-        count = parseInt(viewerElement.innerText.replace(/[^0-9]/g, '')) || 0;
-    }
-
-    // سحب الصورة - البحث في كل الصور عن رابط يحتوي على 'user_assets'
-    const images = Array.from(document.querySelectorAll('img'));
-    const profileImgObj = images.find(img => img.src.includes('user_assets') || img.classList.contains('object-cover'));
-    
-    if (profileImgObj) {
-        profileImg = profileImgObj.src;
-    }
-
-    return { isLive, viewers: count, profilePic: profileImg };
-});
-
-
-        // تحديث قاعدة البيانات
-        streamer.isLive = streamData.isLive;
-        streamer.viewers = streamData.isLive ? streamData.viewers : 0;
-        if (streamData.profilePic) streamer.profilePic = streamData.profilePic;
+        // تحديث البيانات الحقيقية
+        streamer.isLive = !!data.livestream;
+        streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
         
-        await streamer.save();
+        // جلب صورة البروفايل الأصلية
+        if (data.user && data.user.profile_pic) {
+          streamer.profilePic = data.user.profile_pic;
+        }
 
-        console.log(`✅ ${streamer.kickUsername} : ${streamer.isLive ? `🔴 LIVE (${streamer.viewers})` : '⚪ OFF'}`);
+        await streamer.save();
+        console.log(`✅ ${streamer.kickUsername} -> ${streamer.isLive ? `🔴 مباشر (${streamer.viewers})` : '⚪ أوفلاين'}`);
 
       } catch (err) {
-        console.log(`⚠️ فشل فحص ${streamer.kickUsername}: ${err.message}`);
+        console.log(`⚠️ تعذر جلب ${streamer.kickUsername} (قد يكون الحساب خاص أو محمي)`);
       }
     }
   } catch (err) {
-    console.error("❌ خطأ عام في المتصفح:", err.message);
-  } finally {
-    if (browser) {
-      await browser.close();
-      console.log("🔒 تم إغلاق المتصفح.");
-    }
+    console.error("❌ خطأ في السيرفر:", err.message);
   }
 }
-
-
 
 
 // فحص الحالة كل دقيقتين (120000 مللي ثانية)
