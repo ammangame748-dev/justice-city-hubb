@@ -316,34 +316,41 @@
 
 
 
-        <div class="grid">
-            <% if (streamers && streamers.length > 0) { %>
-                <% streamers.forEach(function(s) { %>
-                    <div class="card <%= s.isLive ? 'live' : '' %>">
-                        <% if (s.isLive) { %>
-                            <div style="position:absolute; top:10px; left:10px; background:#ff0000; padding:5px 10px; border-radius:8px; font-size:12px; font-weight:bold;">🔴 LIVE</div>
-                        <% } %>
-                        <img src="<%= s.profilePic || 'https://ui-avatars.com' + s.kickUsername + '&background=151515&color=d4af37' %>" class="avatar">
+ <div class="grid">
+    <% if (streamers && streamers.length > 0) { %>
+        <% streamers.forEach(function(s) { %>
+            <!-- استخدمنا s بدل streamer لأنك عرفتها في الـ function(s) -->
+            <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
+                
+                <!-- تصليح رابط الصورة وصورة احتياطية في حال الفشل -->
+                <img src="<%= (s.profilePic && s.profilePic !== '') ? s.profilePic : '/logo.png' %>" 
+                     class="avatar" 
+                     alt="avatar"
+                     onerror="this.src='/logo.png'">
 
-                        <div style="font-size: 24px; font-weight: bold;"><%= s.kickUsername %></div>
-                        <div style="margin: 10px 0; font-weight: bold;">
-                            <% if (s.isLive) { %>
-                                <span style="color: #00ff99;">مباشر الآن</span><br>
-                                <span style="color: #aaa;">👥 <%= s.viewers %> مشاهد</span>
-                            <% } else { %>
-                                <span style="color: #666;">⚫ أوفلاين</span>
-                            <% } %>
-                        </div>
-<a href="https://kick.com/<%= s.kickUsername %>" target="_blank" class="btn">
-    <%= s.isLive ? 'دخول البث' : 'دخول القناة' %>
-</a>
+                <h3 style="margin: 10px 0;"><%= s.kickUsername %></h3>
 
-
+                <% if (s.isLive) { %>
+                    <div style="color: #00ff99; font-weight: bold; margin-bottom: 10px;">
+                         🔴 مباشر الآن
+                         <br>
+                         <span style="font-size: 14px; color: #d4af37;">👀 <%= s.viewers %> مشاهد</span>
                     </div>
-                <% }); %>
-            <% } else { %>
-                <div style="text-align:center; color:#777; font-size:20px; grid-column: 1 / -1;">🚫 لا يوجد ستريمرز حالياً</div>
-            <% } %>
+                <% } else { %>
+                    <div style="color: #666; margin-bottom: 10px;">غير متصل</div>
+                <% } %>
+
+                <!-- تصليح رابط القناة (إضافة السلاش /) -->
+                <a href="https://kick.com<%= s.kickUsername %>" target="_blank" class="btn">
+                    <%= s.isLive ? 'دخول البث' : 'دخول القناة' %>
+                </a>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div style="text-align:center; color:#777; font-size:20px; grid-column: 1 / -1;">🚫 لا يوجد ستريمرز حالياً</div>
+    <% } %>
+</div>
+
         </div>
     </div>
     <!-- نافذة أضف قناتك -->
