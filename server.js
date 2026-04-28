@@ -46,9 +46,11 @@ async function updateStatus() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
 
-      const res = await fetch(`https://kick.com/api/v2/channels/${streamer.kickUsername}`, {
-        signal: controller.signal
-      });
+      const res = await fetch(`https://kick.com/api/v2/channels/${streamer.kickUsername}?t=${Date.now()}`, {
+    signal: controller.signal,
+    headers: { 'User-Agent': 'Mozilla/5.0' } // ضروري عشان ما يحظرك
+});
+
 
       clearTimeout(timeout);
 
