@@ -51,43 +51,30 @@ browser = await puppeteer.launch({
 
         const page = await browser.newPage();
         
-        // --- حلقة لفحص كل ستريمر ---
-        for (const streamer of streamers) {
-            try {
-                await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-
-                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
-
-                // الكود هنا يذهب لصفحة الستريمر ويفحص حالته
-await page.goto(`https://kick.com/${streamer.kickUsername}`, {
-    waitUntil: 'networkidle2',
-    timeout: 60000 // زيد الوقت لـ 60 ثانية احتياطاً
-});
-
-// أضف هذا السطر: انتظر 5 ثواني كاملة بعد التحميل لضمان ظهور علامة LIVE
-await new Promise(r => setTimeout(r, 5000)); 
-
-const isLive = await page.evaluate(() => {
-    // 1. نبحث عن كلمة LIVE داخل العنصر الأحمر المشهور في كيك
-    const liveBadge = Array.from(document.querySelectorAll('div')).find(el => el.textContent === 'LIVE');
-    
-    // 2. أو نبحث عن وجود مشغل الفيديو (Video Tag)
-    const videoTag = document.querySelector('video');
-
-    return !!(liveBadge || videoTag);
-});
-
-
-
-
-                streamer.isLive = isLive;
-                await streamer.save();
-                console.log(`✅ تم تحديث ${streamer.kickUsername}: ${isLive ? 'لايف 🔴' : 'أوفلاين ⚪'}`);
-                
-            } catch (err) {
-                console.log(`⚠️ فشل فحص الستريمر ${streamer.kickUsername}:`, err.message);
+for (const streamer of streamers) {
+    try {
+        // نستخدم API داخلي من كيك مباشرة
+        const response = await axios.get(`https://kick.com/api/v2/channels/${streamer.kickUsername.trim()}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
             }
-        }
+        });
+
+        const data = response.data;
+        
+        // تحديث البيانات بناءً على استجابة الـ API
+        streamer.isLive = !!data.livestream; // إذا كان هناك livestream فهو لايف
+        streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
+        streamer.profilePic = data.user.profile_pic;
+        
+        await streamer.save();
+        console.log(`✅ ${streamer.kickUsername}: ${streamer.isLive ? '🔴 لايف (' + streamer.viewers + ')' : '⚪ أوفلاين'}`);
+
+    } catch (err) {
+        console.log(`⚠️ فشل فحص ${streamer.kickUsername}: بانتظار المحاولة القادمة (قد يكون بسبب الحماية)`);
+    }
+}
+
 
     } catch (error) {
         console.log("❌ خطأ عام في عملية الفحص:", error.message);
