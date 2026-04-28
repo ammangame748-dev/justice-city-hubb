@@ -39,46 +39,46 @@ async function updateStatus() {
     const streamers = await Streamer.find({ kickUsername: { $ne: null } });
     if (!streamers.length) return;
 
-    console.log(`🚀 جاري التحديث الذكي لـ ${streamers.length} ستريمر عبر Cloudscraper...`);
+    console.log(`🚀 جاري فحص حالة ${streamers.length} ستريمر...`);
 
     for (const streamer of streamers) {
       const username = streamer.kickUsername.trim();
-      const apiUrl = `https://kick.com/api/v1/channels/${username}`;
+      try {
+        // استخدمنا البروكسي لأنه الوحيد اللي بيكسر حماية كيك عندك
+        const response = await fetch(`https://corsproxy.io/?https://kick.com/api/v1/channels/${username}`);
+        
+        if (response.ok) {
+          const data = await response.json();
 
-      // طلب البيانات بطريقة تكسر الحماية
-      cloudscraper.get(apiUrl)
-        .then(async (response) => {
-          const data = JSON.parse(response);
-
-          if (data) {
-            streamer.isLive = !!data.livestream;
-            // هذا السطر بيفحص كل الأماكن الممكنة لرقم المشاهدات في بيانات كيك
-streamer.viewers = data.livestream ? (data.livestream.viewer_count || data.livestream.viewers_count || 0) : 0;
-
-            
-            if (data.user && data.user.profile_pic) {
-              streamer.profilePic = data.user.profile_pic;
-            }
-
-            await streamer.save();
-            console.log(`✅ ${username} -> [بث: ${streamer.isLive} | مشاهدين: ${streamer.viewers}]`);
+          // السطر اللي بحل مشكلتك: إذا data.livestream مش موجود، isLive بتصير false فوراً
+          streamer.isLive = !!data.livestream;
+          
+          // إذا فاتح بنحط المشاهدات، إذا مسكر بنصفر العداد
+          streamer.viewers = data.livestream ? (data.livestream.viewer_count || 0) : 0;
+          
+          if (data.user && data.user.profile_pic) {
+            streamer.profilePic = data.user.profile_pic;
           }
-        })
-        .catch(err => {
-          console.log(`⚠️ فشل تحديث ${username}: ممكن الحساب خطأ أو الحماية قوية`);
-        });
 
-      // انتظار ثانية بين كل طلب عشان ما نتبلك
-      await new Promise(resolve => setTimeout(resolve, 1500));
+          await streamer.save();
+          console.log(`✅ ${username} تم تحديثه | لايف: ${streamer.isLive}`);
+        }
+      } catch (err) {
+        console.log(`⚠️ تعذر الوصول لبيانات ${username}`);
+      }
+      
+      // انتظار ثانية عشان كيك ما تحظر السيرفر
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   } catch (err) {
-    console.error("❌ خطأ عام:", err.message);
+    console.error("❌ خطأ في التحديث:", err.message);
   }
 }
 
 
-// فحص الحالة كل دقيقتين (120000 مللي ثانية)
-setInterval(updateStatus, 120000);
+
+// فحص الحالة كل دقيقتين (30000 مللي ثانية)
+setInterval(updateStatus, 30000);
 // تشغيل الفحص فور تشغيل السيرفر
 updateStatus();
 
