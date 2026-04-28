@@ -52,7 +52,9 @@ async function updateStatus() {
 
           if (data) {
             streamer.isLive = !!data.livestream;
-            streamer.viewers = data.livestream ? data.livestream.viewer_count : 0;
+            // هذا السطر بيفحص كل الأماكن الممكنة لرقم المشاهدات في بيانات كيك
+streamer.viewers = data.livestream ? (data.livestream.viewer_count || data.livestream.viewers_count || 0) : 0;
+
             
             if (data.user && data.user.profile_pic) {
               streamer.profilePic = data.user.profile_pic;
