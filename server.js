@@ -42,17 +42,11 @@ async function updateStatus() {
   let browser;
 
   try {
-    // تشغيل المتصفح بوضع التخفي
-       browser = await puppeteer.launch({
-      headless: "new", // النسخة الأحدث والأكثر استقراراً
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // عشان يشتغل على الاستضافة
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage', // عشان ما تخلص الذاكرة (RAM)
-        '--single-process'
-      ]
-    });
+browser = await puppeteer.launch({
+  headless: "new",
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+
 
 
     const page = await browser.newPage();
