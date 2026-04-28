@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const Pusher = require('pusher-js');
+global.fetch = require('node-fetch'); // هذا السطر ضروري عشان Pusher يشتغل في السيرفر
 
 // تفعيل إضافة التخفي لتجاوز حماية Kick
 puppeteer.use(StealthPlugin());
@@ -41,11 +43,18 @@ async function updateStatus() {
 
         console.log(`🔍 جاري فحص حالة ${streamers.length} ستريمرز...`);
 
-        browser = await puppeteer.launch({
-            headless: "new",
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+      browser = await puppeteer.launch({
+    headless: "new",
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+    args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox', 
+        '--disable-dev-shm-usage', // ضروري جداً لمنع توقف المتصفح
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu'
+    ]
+});
+
 
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
@@ -53,7 +62,8 @@ async function updateStatus() {
         for (const streamer of streamers) {
             try {
                 const url = `https://kick.com/api/v2/channels/${streamer.kickUsername.trim()}`;
-                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 }); // زيادة التايم أوت لدقيقة
+
 
                 const content = await page.evaluate(() => document.body.innerText);
                 let data;
@@ -91,7 +101,7 @@ async function updateStatus() {
 }
 
 // تشغيل الفحص كل 5 دقائق
-setInterval(updateStatus, 300000);
+setInterval(updateStatus, 60000);
 
 // --- [ المسارات / Routes ] ---
 
@@ -155,6 +165,35 @@ app.get('/admin/delete-streamer/:id', async (req, res) => {
     await Streamer.findByIdAndDelete(req.params.id);
     res.redirect('/admin-justice?pass=1234');
 });
+// وظيفة المراقبة الفورية
+function monitorKickStreams() {
+    const pusher = new Pusher('eb1d5f283081a78b932c', {
+        cluster: 'mt1',
+        forceTLS: true
+    });
+
+    // جلب كل الستريمرز من الداتابيز وتشغيل المراقب لهم
+    Streamer.find({}).then(streamers => {
+        streamers.forEach(streamer => {
+            const channel = pusher.subscribe(`channel.${streamer.kickUsername.trim()}`);
+            
+            // عند بداية البث
+            channel.bind('App\\Events\\StreamerIsLive', async (data) => {
+                console.log(`🔴 فوراً: ${streamer.kickUsername} بدأ البث!`);
+                await Streamer.findOneAndUpdate({ kickUsername: streamer.kickUsername }, { isLive: true });
+            });
+
+            // عند نهاية البث
+            channel.bind('App\\Events\\StreamerIsOffline', async (data) => {
+                console.log(`⚪ فوراً: ${streamer.kickUsername} أغلق البث.`);
+                await Streamer.findOneAndUpdate({ kickUsername: streamer.kickUsername }, { isLive: false, viewers: 0 });
+            });
+        });
+    });
+}
+
+// تشغيل المراقبة فور تشغيل السيرفر
+monitorKickStreams();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
