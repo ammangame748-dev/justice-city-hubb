@@ -109,12 +109,18 @@ app.post('/apply', async (req, res) => {
     const { kickUser, discordName } = req.body;
     if(!kickUser) return res.send("الاسم مطلوب");
 
-    const existing = await Application.findOne({ kickUsername: kickUser.trim() });
-    if(existing) return res.send("<script>alert('⚠️ قدمت طلباً مسبقاً بهذا الاسم!'); window.location='/';</script>");
+    const cleanName = kickUser.trim();
 
-    await Application.create({ kickUsername: kickUser.trim(), discordName });
-    res.send("<script>alert('✅ تم إرسال طلبك بنجاح!'); window.location='/';</script>");
+    // السطر السحري: بيمسح أي طلب قديم أو ستريمر قديم بنفس الاسم عشان ما يعلق
+    await Application.deleteMany({ kickUsername: cleanName });
+    await Streamer.deleteMany({ kickUsername: cleanName });
+
+    // إضافة الطلب الجديد
+    await Application.create({ kickUsername: cleanName, discordName: discordName });
+    
+    res.send("<script>alert('✅ تم إرسال طلبك بنجاح! روح على لوحة الأدمن واقبله الآن.'); window.location='/';</script>");
 });
+
 
 // حماية مسارات الأدمن
 app.use('/admin', (req, res, next) => {
