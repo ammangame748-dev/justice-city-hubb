@@ -35,60 +35,72 @@ const Application = mongoose.model('Application', new mongoose.Schema({
 
 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
 async function updateStatus() {
-  console.log("🔄 تحديث حالة الستريمرز...");
-
+  console.log("🔄 جاري التحديث باستخدام المتصفح (Puppeteer)...");
+  
   const streamers = await Streamer.find({});
+  let browser;
 
-  for (const streamer of streamers) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    // تشغيل المتصفح بوضع التخفي
+       browser = await puppeteer.launch({
+      headless: "new", // النسخة الأحدث والأكثر استقراراً
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null, // عشان يشتغل على الاستضافة
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage', // عشان ما تخلص الذاكرة (RAM)
+        '--single-process'
+      ]
+    });
 
-      const res = await fetch(`https://kick.com/api/v2/channels/${streamer.kickUsername}?t=${Date.now()}`, {
-    signal: controller.signal,
-    headers: { 'User-Agent': 'Mozilla/5.0' } // ضروري عشان ما يحظرك
-});
 
+    const page = await browser.newPage();
+    
+    // محاكاة متصفح حقيقي عشان ما ننكشف
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
 
-      clearTimeout(timeout);
+    for (const streamer of streamers) {
+      try {
+        console.log(`🔍 فحص: ${streamer.kickUsername}`);
+        
+        // الانتقال لرابط الـ API الخاص بالقناة
+        await page.goto(`https://kick.com/api/v2/channels/${streamer.kickUsername}`, {
+          waitUntil: 'networkidle2', // انتظر لينتهي تحميل البيانات
+          timeout: 30000
+        });
 
-      if (!res.ok) {
-        console.log(`⚠️ فشل جلب ${streamer.kickUsername}`);
-        continue;
-      }
+        // سحب محتوى الصفحة (JSON)
+        const content = await page.evaluate(() => document.querySelector("pre")?.innerText || document.body.innerText);
+        const data = JSON.parse(content);
 
-      const data = await res.json();
+        if (data && data.channel) {
+          const isLive = data.channel.is_live;
+          const viewers = data.channel.viewer_count || 0;
+          const profilePic = data.channel?.user?.profile_pic || streamer.profilePic;
 
-      if (!data || !data.channel) continue;
-
-      const isLive = data.channel.is_live;
-      const viewers = data.channel.viewer_count || 0;
-      const profilePic = data.channel?.user?.profile_pic || null;
-
-      await Streamer.updateOne(
-        { _id: streamer._id },
-        {
-          $set: {
-            isLive,
-            viewers,
-            profilePic
-          }
+          await Streamer.updateOne(
+            { _id: streamer._id },
+            { $set: { isLive, viewers, profilePic } }
+          );
+          console.log(`✅ ${streamer.kickUsername} | مباشر: ${isLive} | 👁 ${viewers}`);
         }
-      );
-
-      console.log(`✅ ${streamer.kickUsername} | Live: ${isLive} | 👁 ${viewers}`);
-
-    } catch (err) {
-      console.error(`❌ خطأ مع ${streamer.kickUsername}`, err.message);
+      } catch (err) {
+        console.error(`❌ خطأ في معالجة ${streamer.kickUsername}:`, err.message);
+      }
     }
+  } catch (error) {
+    console.error("❌ فشل تشغيل المتصفح:", error.message);
+  } finally {
+    if (browser) await browser.close(); // إغلاق المتصفح لتوفير الرام
+    console.log("🏁 انتهت عملية التحديث.");
   }
 }
 
 
-// فحص الحالة كل دقيقتين (30000 مللي ثانية)
-setInterval(updateStatus, 30000);
+// تحديث كل 3 دقائق (180000 مللي ثانية)
+setInterval(updateStatus, 180000);
+
 // تشغيل الفحص فور تشغيل السيرفر
 updateStatus();
 
