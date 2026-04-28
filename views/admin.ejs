@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم | Justice City</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        body { background: #050505; color: white; font-family: 'Changa', sans-serif; padding: 20px; }
+        .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .accept { background: #00ff99; color: black; }
+        .delete { background: #ff4444; color: white; }
+        h2 { color: #d4af37; border-bottom: 2px solid #d4af37; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h2>👑 لوحة طلبات الستريمرز</h2>
+        <% apps.forEach(app => { %>
+            <div class="card">
+                <div>
+                    <div>الستريمر: <span style="color:#d4af37"><%= app.kickUsername %></span></div>
+                </div>
+                <a href="/admin/accept/<%= app._id %>?pass=1234" class="btn accept">✅ قبول وإضافة</a>
+            </div>
+        <% }) %>
+
+        <h2 style="margin-top: 40px;">🚫 الستريمرز الحاليين (للحذف)</h2>
+        <p style="color: #666; font-size: 14px;">(لو فيه بطاقة فاضية بالموقع احذفها من هون)</p>
+        
+        <% if (typeof streamers !== 'undefined') { %>
+            <% streamers.forEach(s => { %>
+                <div class="card">
+                    <div>اسم الستريمر: <span style="color:#d4af37"><%= s.kickUsername || 'اسم فارغ ⚠️' %></span></div>
+                    <a href="/admin/delete-streamer/<%= s._id %>?pass=1234" class="btn delete">🗑️ حذف من الموقع</a>
+
+                </div>
+            <% }) %>
+        <% } %>
+
+        <br><br>
+        <a href="/" style="color: #888; text-decoration: none;">🏠 العودة للموقع</a>
+    </div>
+</body>
+</html>

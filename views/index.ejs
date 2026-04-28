@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+   <link rel="icon" type="image/png" href="/logo.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justice City | Hub الملكي</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        /* تنسيق جعل النافذة تظهر في منتصف الشاشة تماماً */
+#apply-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* خلفية سوداء شفافة */
+    display: none; /* مخفي افتراضياً */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* أعلى من كل شيء */
+    backdrop-filter: blur(5px);
+}
+
+        .btn-support {
+    background: rgba(212, 175, 55, 0.1);
+    color: #d4af37 !important;
+    border: 1px dashed #d4af37;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.btn-support:hover {
+    background: #d4af37;
+    color: black !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+    border-style: solid;
+}
+
+       /* الحاوية الرئيسية للإحصائيات عشان تصفهم جنب بعض */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* هاد السطر بجبرهم يصفوا 3 جنب بعض */
+    gap: 20px;
+    margin: 40px auto;
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.stat-box {
+    background: rgba(15, 15, 15, 0.9);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.stat-box:hover {
+    border-color: #d4af37;
+    transform: translateY(-5px);
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.stat-desc {
+    color: #888;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* للموبايل عشان ما يخرب الشكل */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* حركة نبض للستريمر النشط */
+.live-pulse {
+    border-color: rgba(0, 255, 153, 0.2);
+}
+.live-pulse:hover {
+    border-color: #00ff99;
+}
+
+        :root {
+            --bg: #050505;
+            --gold: linear-gradient(45deg, #d4af37, #f9f295, #d4af37);
+            --card-bg: rgba(20, 20, 20, 0.8);
+            --neon-gold: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        body { margin: 0; font-family: 'Changa', sans-serif; background: var(--bg); color: white; overflow-x: hidden; }
+      #tsparticles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-color: #050505;
+}
+
+        nav {
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 50px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: bold; padding: 8px 20px; border-radius: 8px; transition: 0.3s; }
+        .btn-apply { border: 1px solid #d4af37; color: #d4af37 !important; }
+        .btn-apply:hover { background: #d4af37; color: black !important; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        .podium { display: flex; justify-content: center; align-items: flex-end; gap: 20px; margin: 60px 0 100px 0; padding-bottom: 20px; }
+        .podium-card { background: var(--card-bg); border-radius: 20px; width: 250px; text-align: center; padding: 30px 15px; position: relative; border-top: 4px solid; transition: 0.5s; }
+        .podium-card.first { height: 350px; border-color: #f9f295; box-shadow: var(--neon-gold); z-index: 2; }
+        .podium-card.second { height: 280px; border-color: #d7dde8; }
+        .podium-card.third { height: 230px; border-color: #f0be99; }
+        .medal { font-size: 50px; margin-bottom: 10px; display: block; }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px; 
+            margin-top: 50px; 
+        }
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px); 
+            border-radius: 20px; 
+            padding: 25px 15px; 
+            text-align: center; 
+            border: 1px solid rgba(192, 192, 192, 0.1); 
+            transition: 0.5s; 
+            position: relative; 
+        }
+        .card:hover { transform: translateY(-10px); border-color: #d4af37; box-shadow: var(--neon-gold); }
+        .card.live { border: 1px solid #d4af37; }
+        .avatar { 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            margin-bottom: 15px; 
+            border: 3px solid #757f9a; 
+            object-fit: cover;
+        }
+        .card.live .avatar { border-color: #d4af37; filter: drop-shadow(0 0 8px #d4af37); }
+        .btn { 
+            background: var(--gold); 
+            color: #000; 
+            text-decoration: none; 
+            padding: 10px 25px; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            display: block; 
+            margin-top: 15px; 
+            text-align: center;
+            font-size: 14px;
+        }
+/* تنسيق أزرار الفلترة بألوان الموقع الذهبية */
+.filter-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 30px 0;
+}
+.filter-btn {
+    background: rgba(20, 20, 20, 0.8);
+    color: #d4af37;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    padding: 10px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Changa';
+    font-weight: bold;
+    transition: 0.3s;
+}
+.filter-btn.active, .filter-btn:hover {
+    background: var(--gold); /* اللون الذهبي تبع موقعك */
+    color: black;
+    box-shadow: var(--neon-gold);
+    border-color: transparent;
+}
+
+    </style>
+    <!-- حط هاد السطر قبل </head> -->
+<script src="https://jsdelivr.net"></script>
+
+</head>
+<body>
+
+    <div id="tsparticles"></div>
+
+
+<nav>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- هون بنادي الصورة اللي حطيتها بمجلد public -->
+        <img src="/logo.png" style="width: 55px; height: 55px; border-radius: 10px; object-fit: cover; filter: drop-shadow(0 0 5px #d4af37);">
+
+        
+        <span style="background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 24px; font-weight: bold; font-family: 'Changa';">
+            JUSTICE CITY HUB
+        </span>
+    </div>
+    
+    <div class="nav-links">
+            <a href="https://paypal.me/HosamHamaideh" target="_blank" class="btn-support">☕ ادعم المشروع</a>
+        <a href="javascript:void(0)" onclick="toggleRankings()">🏆 المتصدرين</a>
+        <a href="javascript:void(0)" onclick="openModal()" class="btn-apply">🔗 أضف قناتك</a>
+    </div>
+</nav>
+
+<div class="filter-container">
+    <button onclick="filterStreamers('all', event)" class="filter-btn active">الكل</button>
+    <button onclick="filterStreamers('live', event)" class="filter-btn">البث المباشر</button>
+    <button onclick="filterStreamers('offline', event)" class="filter-btn">غير متصل</button>
+</div>
+
+
+    <div class="container">
+        <!-- تعديل هذا السطر ليصبح مخفياً في البداية -->
+<div id="rankings" class="animate" style="text-align: center; margin-top: 40px; display: none;">
+
+            <h1 style="background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 50px;">نخبة الستريمرز</h1>
+            <div class="podium">
+                <div class="podium-card second">
+                    <span class="medal">🥈</span>
+                    <h3 style="color: #d7dde8;">المركز الثاني</h3>
+                    <p style="color: #666;">قريباً..</p>
+                </div>
+                <div class="podium-card first">
+                    <span class="medal">🥇</span>
+                    <h2 style="color: #f9f295; font-size: 30px;">المركز الأول</h2>
+                    <p style="color: #888;">ملك البثوث</p>
+                </div>
+                <div class="podium-card third">
+                    <span class="medal">🥉</span>
+                    <h3 style="color: #f0be99;">المركز الثالث</h3>
+                    <p style="color: #666;">في طريق القمة</p>
+                </div>
+            </div>
+        </div>
+
+</div>
+<div class="stats-grid">
+    <!-- كرت 1 -->
+    <div class="stat-box">
+        <div class="stat-content">
+            <span class="stat-number"><%= stats.totalStreamers %></span>
+            <span class="stat-desc">إجمالي الستريمرز</span>
+        </div>
+    </div>
+
+    <!-- كرت 2 -->
+    <div class="stat-box">
+        <div class="stat-content">
+            <span class="stat-number"><%= stats.totalViewers %></span>
+            <span class="stat-desc">مشاهد حالياً</span>
+        </div>
+    </div>
+
+    <!-- كرت 3 -->
+    <div class="stat-box">
+        <div class="stat-content">
+            <span class="stat-number" style="color: #00ff99;"><%= stats.liveNow %></span>
+            <span class="stat-desc">ستريمر نشط الآن</span>
+        </div>
+    </div>
+</div> <!-- القفلة هاي هي اللي كانت ناقصة عندك ومخربة الدنيا -->
+
+
+
+
+        <div class="grid">
+            <% if (streamers && streamers.length > 0) { %>
+                <% streamers.forEach(function(s) { %>
+                    <div class="card <%= s.isLive ? 'live' : '' %>">
+                        <% if (s.isLive) { %>
+                            <div style="position:absolute; top:10px; left:10px; background:#ff0000; padding:5px 10px; border-radius:8px; font-size:12px; font-weight:bold;">🔴 LIVE</div>
+                        <% } %>
+                        <img src="<%= s.profilePic || 'https://ui-avatars.com' + s.kickUsername + '&background=151515&color=d4af37' %>" class="avatar">
+
+                        <div style="font-size: 24px; font-weight: bold;"><%= s.kickUsername %></div>
+                        <div style="margin: 10px 0; font-weight: bold;">
+                            <% if (s.isLive) { %>
+                                <span style="color: #00ff99;">مباشر الآن</span><br>
+                                <span style="color: #aaa;">👥 <%= s.viewers %> مشاهد</span>
+                            <% } else { %>
+                                <span style="color: #666;">⚫ أوفلاين</span>
+                            <% } %>
+                        </div>
+<a href="https://kick.com/<%= s.kickUsername %>" target="_blank" class="btn">
+    <%= s.isLive ? 'دخول البث' : 'دخول القناة' %>
+</a>
+
+
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div style="text-align:center; color:#777; font-size:20px; grid-column: 1 / -1;">🚫 لا يوجد ستريمرز حالياً</div>
+            <% } %>
+        </div>
+    </div>
+    <!-- نافذة أضف قناتك -->
+    <div id="apply-modal" style="display: none;">
+        <div class="card" style="width: 380px; border: 2px solid #d4af37; padding: 30px; position: relative;">
+            <h2 style="color: #d4af37; margin-bottom: 20px;">🔗 أضف قناتك</h2>
+            <form action="/apply" method="POST">
+                <input type="text" name="kickUser" placeholder="اسم قناتك في Kick" required 
+                       style="display: block; width: 100%; box-sizing: border-box; padding: 15px; margin-bottom: 15px; background: #000; color: #fff; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 10px; font-family: 'Changa'; text-align: center;">
+                
+                <button type="submit" class="btn" style="width: 100%; cursor: pointer; border: none;">إرسال الطلب</button>
+                
+                <button type="button" onclick="closeModal()" 
+                        style="background: none; color: #777; border: none; margin-top: 15px; cursor: pointer; font-family: 'Changa'; font-size: 14px;">
+                    إغلاق النافذة
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- السكريبت الموحد لكل الوظائف -->
+    <script>
+function filterStreamers(type, event) {
+    // 1. تحديث شكل الأزرار (إزالة active من الكل وإضافتها للزر المضغطوط)
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    if (event) {
+        event.currentTarget.classList.add('active');
+    }
+
+    // 2. جلب كل الكروت الموجودة داخل الـ grid
+    const cards = document.querySelectorAll('.grid .card');
+    
+    cards.forEach(card => {
+        // فحص هل الكرت يحتوي على كلاس live (اللي أنت ضايفه أصلاً في EJS)
+        const isLive = card.classList.contains('live');
+
+        if (type === 'all') {
+            card.style.display = 'block'; // إظهار الكل
+        } else if (type === 'live') {
+            card.style.display = isLive ? 'block' : 'none'; // إظهار اللايف فقط
+        } else if (type === 'offline') {
+            card.style.display = !isLive ? 'block' : 'none'; // إظهار الأوفلاين فقط
+        }
+    });
+
+    console.log("Filtering done for:", type); // للتأكد في Console المتصفح
+}
+
+
+        // وظائف النافذة المنبثقة (Modal)
+        function openModal() { 
+            document.getElementById('apply-modal').style.display = 'flex'; 
+        }
+        
+        function closeModal() { 
+            document.getElementById('apply-modal').style.display = 'none'; 
+        }
+
+        // وظيفة إظهار وإخفاء المتصدرين (Rankings)
+        function toggleRankings() {
+            const rankings = document.getElementById('rankings');
+            // التأكد من حالة العرض الحالية
+            if (rankings.style.display === 'none' || rankings.style.display === '') {
+                rankings.style.display = 'block';
+                // نزول تلقائي للقسم عند فتحه
+                rankings.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                rankings.style.display = 'none';
+            }
+        }
+
+        // إغلاق النافذة عند الضغط خارجها (اختياري لزيادة الاحترافية)
+        window.onclick = function(event) {
+            const modal = document.getElementById('apply-modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+    <script>
+async function loadParticles() {
+    await tsParticles.load("tsparticles", {
+        fpsLimit: 60,
+        particles: {
+            number: { value: 100, density: { enable: true, area: 800 } },
+            color: { value: "#d4af37" },
+            shape: { type: "circle" },
+            opacity: {
+                value: { min: 0.1, max: 0.6 },
+                animation: { enable: true, speed: 0.5, sync: false }
+            },
+            size: { value: { min: 1, max: 3 } },
+            move: {
+                enable: true,
+                speed: 0.6,
+                direction: "none",
+                random: true,
+                straight: false,
+                outModes: { default: "out" }
+            }
+        },
+        detectRetina: true
+    });
+}
+loadParticles();
+</script>
+
+</body>
+</html>
