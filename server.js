@@ -108,6 +108,19 @@ app.get('/', async (req, res) => {
   };
   res.render('index', { streamers, stats });
 });
+// راوت لرفض الطلبات
+app.get('/admin/reject/:id', async (req, res) => {
+  if (req.query.pass !== "1234") return res.status(403).send("❌ غير مصرح");
+  await Application.findByIdAndDelete(req.params.id);
+  res.redirect('/admin-justice?pass=1234');
+});
+
+// راوت لطرد/حذف ستريمر موجود أصلاً
+app.get('/admin/delete-streamer/:id', async (req, res) => {
+  if (req.query.pass !== "1234") return res.status(403).send("❌ غير مصرح");
+  await Streamer.findByIdAndDelete(req.params.id);
+  res.redirect('/admin-justice?pass=1234');
+});
 
 app.post('/apply', async (req, res) => {
   const { kickUser, discordName } = req.body;
