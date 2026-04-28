@@ -71,7 +71,11 @@ async function updateStatus() {
 }
 
 
-setInterval(updateStatus, 60000);
+setInterval(updateStatus, 300000); // 300000 تساوي 5 دقائق
+const browser = await puppeteer.launch({
+    headless: "new", // ضروري جداً لتوفير الرام
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process']
+});
 
 // --- [ المسارات ] ---
 
