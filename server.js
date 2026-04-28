@@ -55,12 +55,18 @@ browser = await puppeteer.launch({
         for (const streamer of streamers) {
             try {
                 // الكود هنا يذهب لصفحة الستريمر ويفحص حالته
-                await page.goto(`https://kick.com{streamer.kickUsername}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+           await page.goto(`https://kick.com/${streamer.kickUsername}`, {
+    waitUntil: 'networkidle2',
+    timeout: 30000
+});
+
                 
-                // مثال بسيط للفحص (هذا الجزء يعتمد على تصميم موقع Kick المتغير)
-                const isLive = await page.evaluate(() => {
-                    return document.body.innerText.includes('LIVE') || document.body.innerText.includes('مباشر');
-                });
+const isLive = await page.evaluate(() => {
+    const badge = document.querySelector('[data-a-target="livestream-badge"]');
+    const text = document.body.innerText.toLowerCase();
+    
+    return !!badge || text.includes('live');
+});
 
                 streamer.isLive = isLive;
                 await streamer.save();
