@@ -251,153 +251,195 @@ nav {
     left: 120%;
 }
 
-/* ================= MEDAL ================= */
+/* ================= MEDAL & RANKINGS ================= */
 .medal {
     font-size: 50px;
     margin-bottom: 10px;
     display: block;
 }
 
-       /* تنسيق الشبكة لتكون البطاقات بحجم طبيعي وموزع صح */
+/* ================= GRID SYSTEM ================= */
 .grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); /* جعل العرض أكبر ليناسب الشكل الأفقي */
     gap: 25px; 
     padding: 20px;
     margin-top: 30px;
 }
 
-/* البطاقة الأساسية بتأثير الزجاج الخلفي */
+/* ================= NEW HORIZONTAL CARD ================= */
 .card {
     position: relative;
     background: #0a0a0a;
     border-radius: 20px;
-    padding: 30px 20px;
-    text-align: center;
-    transition: 0.5s;
-    overflow: hidden; /* عشان تأثير الألوان ما يطلع برا الزوايا */
+    padding: 20px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* ترتيب العناصر بالعرض */
     align-items: center;
-    justify-content: center;
+    gap: 20px;
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    overflow: hidden;
     z-index: 1;
 }
 
-/* تأثير الألوان المتحركة في الخلفية */
+/* تأثير التوهج عند الوقوف على الكرت أو إذا كان لايف */
+.card:hover, .card.live {
+    border-color: #d4af37;
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.1);
+    transform: translateY(-5px);
+}
+
+/* خلفية متحركة ناعمة جداً تظهر فقط عند الهوفر */
 .card::before {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: conic-gradient(
-        #d4af37, 
-        #f9f295, 
-        #8a6d3b, 
-        #d4af37, 
-        #000, 
-        #d4af37
-    );
-    animation: rotateGlow 6s linear infinite;
-    z-index: -2;
-}
-
-/* الطبقة السوداء اللي فوق الألوان عشان يضل بس الإطار اللي مبين */
-.card::after {
-    content: "";
-    position: absolute;
-    inset: 3px; /* سمك الإطار */
-    background: #0f0f0f;
-    border-radius: 18px;
+    inset: 0;
+    background: linear-gradient(120deg, transparent, rgba(212, 175, 55, 0.05), transparent);
+    transform: translateX(-100%);
+    transition: 0.6s;
     z-index: -1;
 }
 
-/* حركة دوران الألوان */
-@keyframes rotateGlow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.card:hover::before {
+    transform: translateX(100%);
 }
 
-/* تحسين شكل صورة الستريمر */
+/* ================= AVATAR DESIGN ================= */
 .avatar {
-    width: 110px;
-    height: 110px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
-    margin-bottom: 15px;
     border: 3px solid #d4af37;
-    padding: 3px;
+    padding: 4px;
     background: #000;
+    object-fit: cover;
+    order: 2; /* وضع الصورة على اليمين (RTL) */
     transition: 0.4s;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
 .card:hover .avatar {
-    transform: scale(1.1) rotate(10deg);
+    transform: scale(1.05) rotate(5deg);
     border-color: #fff;
 }
 
-/* نصوص البطاقة */
-.card h3 {
+/* ================= CARD CONTENT ================= */
+.card-info {
+    flex-grow: 1;
+    text-align: right;
+    order: 1;
+}
+
+.card-info h3 {
     font-size: 22px;
     color: #fff;
-    margin: 10px 0;
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    margin: 0 0 8px 0;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
-/* زر الدخول */
-.btn {
-    width: 100%;
-    padding: 12px;
+/* تاق المنصة */
+.platform-tag {
+    display: inline-block;
+    background: rgba(0, 255, 153, 0.1);
+    color: #00ff99;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    border: 1px solid rgba(0, 255, 153, 0.3);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+/* زر دخول القناة */
+.btn-visit {
+    display: inline-block;
     background: var(--gold);
     color: #000 !important;
-    border: none;
-    border-radius: 10px;
+    padding: 10px 25px;
+    border-radius: 12px;
     font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.3s;
+    font-size: 14px;
     text-decoration: none;
-    margin-top: 15px;
+    transition: 0.3s;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-.btn:hover {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-    transform: translateY(-3px);
+.btn-visit:hover {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+    transform: scale(1.05);
 }
 
-/* تمييز الستريمر اللايف بنبض خفيف خلف الألوان */
-.card.live::before {
-    animation: rotateGlow 3s linear infinite; /* حركة أسرع للايف */
-    background: conic-gradient(#00ff99, #006644, #00ff99, #000, #00ff99);
+/* ================= LIVE INDICATORS ================= */
+.live-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #00ff99;
 }
 
-/* تنسيق أزرار الفلترة بألوان الموقع الذهبية */
+.viewer-count {
+    position: absolute;
+    bottom: 15px;
+    left: 15px; /* وضع العداد في الزاوية السفلى اليسرى */
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff4b4b;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* ================= FILTERS & FAVS ================= */
 .filter-container {
     display: flex;
     justify-content: center;
     gap: 15px;
     margin: 30px 0;
 }
+
 .filter-btn {
     background: rgba(20, 20, 20, 0.8);
     color: #d4af37;
     border: 1px solid rgba(212, 175, 55, 0.4);
     padding: 10px 30px;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     font-family: 'Changa';
     font-weight: bold;
     transition: 0.3s;
 }
+
 .filter-btn.active, .filter-btn:hover {
-    background: var(--gold); /* اللون الذهبي تبع موقعك */
+    background: var(--gold);
     color: black;
     box-shadow: var(--neon-gold);
     border-color: transparent;
 }
+
 .fav-star {
-    font-size: 22px;
-    color: #777;
+    font-size: 24px;
+    color: #444;
     transition: 0.3s;
     user-select: none;
 }
@@ -406,6 +448,16 @@ nav {
     color: #d4af37;
     text-shadow: 0 0 10px #d4af37;
 }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+    .card { flex-direction: column; text-align: center; }
+    .card-info { text-align: center; }
+    .avatar { order: 0; }
+    .viewer-count { position: static; margin-top: 10px; justify-content: center; }
+}
+
 
     </style>
     <!-- حط هاد السطر قبل </head> -->
@@ -501,11 +553,38 @@ nav {
     <% if (streamers && streamers.length > 0) { %>
         <% streamers.forEach(function(s) { %>
             <!-- استخدمنا s بدل streamer لأنك عرفتها في الـ function(s) -->
-            <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
-                <div style="position:absolute; top:10px; left:10px; cursor:pointer;">
-    <span class="fav-star" data-user="<%= s.kickUsername %>" onclick="toggleFavorite('<%= s.kickUsername %>')">
-        ☆
-    </span>
+    <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
+    
+    <!-- النجمة للمفضلة -->
+    <div style="position:absolute; top:15px; left:15px; z-index: 10;">
+        <span class="fav-star" data-user="<%= s.kickUsername %>" onclick="toggleFavorite('<%= s.kickUsername %>')">☆</span>
+    </div>
+
+    <!-- معلومات الستريمر -->
+    <div class="card-info">
+        <div class="platform-tag">KICK</div>
+        <h3><%= s.kickUsername %></h3>
+        
+        <% if (s.isLive) { %>
+            <div style="color: #00ff99; font-size: 13px;">🔴 مباشر الآن</div>
+            <div class="viewer-count">
+                <span class="dot"></span> <%= s.viewers %>
+            </div>
+        <% } else { %>
+            <div style="color: #666; font-size: 13px;">غير متصل</div>
+        <% } %>
+
+       <a href="<%= 'https://kick.com/' + s.kickUsername %>" target="_blank" class="btn-visit">
+            مشاهدة القناة
+        </a>
+    </div>
+
+    <!-- صورة الستريمر -->
+    <img src="<%= s.profilePic || '/logo.png' %>" 
+         class="avatar" 
+         alt="avatar" 
+         onerror="this.src='/logo.png'">
+
 </div>
                 <!-- تصليح رابط الصورة وصورة احتياطية في حال الفشل -->
                 <img src="<%= s.profilePic || '/logo.png' %>" 
