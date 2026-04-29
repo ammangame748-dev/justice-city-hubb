@@ -32,85 +32,51 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
+const axios = require('axios');
 
 async function updateStatus() {
-  console.log("🔄 جاري التحديث المضمون...");
+  console.log("🔄 تحديث من Kick API...");
+  
   const streamers = await Streamer.find({});
   if (streamers.length === 0) return;
 
-  let browser;
-  try {
-    browser = await puppeteer.launch({
-      headless: "new", // تأكد أن النسخة حديثة
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+  for (const streamer of streamers) {
+    try {
+      const username = streamer.kickUsername.toLowerCase().trim();
 
-    const page = await browser.newPage();
-    // تقليل استهلاك الموارد: منع الصور والخطوط من التحميل
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      if (['image', 'font', 'stylesheet'].includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+      // جلب بيانات القناة
+      const res = await axios.get(`https://kick.com/api/v2/channels/${username}`);
+      const data = res.data;
 
-    for (const streamer of streamers) {
-      try {
-        const cleanName = streamer.kickUsername.trim().toLowerCase();
-        console.log(`🔍 فحص قناة: ${cleanName}`);
-        
-        // الإصلاح هنا: أضفنا / و علامة $
-        await page.goto(`https://kick.com/${cleanName}`, {
-          waitUntil: 'networkidle0', 
-          timeout: 30000 
-        });
+      const isLive = data.livestream !== null;
 
-        // انتظر ثواني بسيطة للتأكد من تحميل الـ DOM
-        await new Promise(r => setTimeout(r, 3000));
+      const viewers = isLive ? data.livestream.viewer_count : 0;
 
-        const statusData = await page.evaluate(() => {
-          // فحص علامة الـ LIVE بأكثر من طريقة
-          const isLive = !!document.querySelector('.v-live-indicator') || 
-                         !!document.querySelector('[data-is-live="true"]') ||
-                         document.body.innerText.includes('LIVE');
-          
-          const viewersEl = document.querySelector('.v-live-indicator__viewer-count') || 
-                            document.querySelector('.viewer-count');
-          
-          let vCount = 0;
-          if (viewersEl) {
-              vCount = parseInt(viewersEl.innerText.replace(/[^0-9]/g, '')) || 0;
+      const profilePic = data.user?.profile_pic || null;
+
+      await Streamer.updateOne(
+        { _id: streamer._id },
+        {
+          $set: {
+            isLive,
+            viewers,
+            profilePic
           }
+        }
+      );
 
-          return { isLive, viewers: vCount };
-        });
-
-        await Streamer.updateOne(
-          { _id: streamer._id },
-          { $set: { 
-              isLive: statusData.isLive, 
-              viewers: statusData.viewers
-          }}
-        );
-        console.log(`✅ ${cleanName} | لايف: ${statusData.isLive} | المشاهدات: ${statusData.viewers}`);
-
-      } catch (err) {
-        console.error(`❌ خطأ في فحص ${streamer.kickUsername}:`, err.message);
-      }
+      console.log(`✅ ${username} | LIVE: ${isLive} | 👀 ${viewers}`);
+      
+    } catch (err) {
+      console.error(`❌ ${streamer.kickUsername}:`, err.message);
     }
-  } catch (error) {
-    console.error("❌ خطأ متصفح كلي:", error.message);
-  } finally {
-    if (browser) await browser.close();
-    console.log("🏁 انتهت الدورة.");
   }
 }
 
 
+
 // تحديث كل 3 دقائق (180000 مللي ثانية)
-setInterval(updateStatus, 4000);
+setInterval(updateStatus, 60000); // كل دقيقة
 
 // تشغيل الفحص فور تشغيل السيرفر
 updateStatus();
@@ -163,11 +129,11 @@ app.get('/admin/accept/:id', async (req, res) => {
       { $set: { kickUsername: appData.kickUsername } },
       { upsert: true }
     );
-    // تحديث الحالة فوراً بعد القبول
-    updateStatus();
+    // ✅ حذفنا استدعاء updateStatus من هنا لحماية السيرفر من الانهيار
   }
   res.redirect('/admin-justice?pass=1234');
 });
+
 // ✅ راوت رفض طلبات الانضمام
 app.get('/admin/reject/:id', async (req, res) => {
   if (req.query.pass !== "1234") return res.status(403).send("❌ غير مصرح");
