@@ -267,148 +267,125 @@ nav {
     margin-top: 30px;
 }
 
-/* ================= NEW HORIZONTAL CARD ================= */
+/* ================= NEW CLEAN HORIZONTAL CARD ================= */
 .card {
     position: relative;
     background: #0a0a0a;
     border-radius: 20px;
-    padding: 20px;
+    padding: 25px;
     display: flex;
-    flex-direction: row; /* ترتيب العناصر بالعرض */
+    flex-direction: row-reverse; /* يضمن النصوص يمين والصورة يسار دائماً */
     align-items: center;
-    gap: 20px;
-    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid rgba(212, 175, 55, 0.15);
-    overflow: hidden;
-    z-index: 1;
+    justify-content: space-between;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    min-height: 160px;
+    transition: 0.3s;
+    box-sizing: border-box;
 }
 
-/* تأثير التوهج عند الوقوف على الكرت أو إذا كان لايف */
-.card:hover, .card.live {
+.card:hover {
     border-color: #d4af37;
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.1);
-    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+    transform: translateY(-3px);
 }
 
-/* خلفية متحركة ناعمة جداً تظهر فقط عند الهوفر */
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent, rgba(212, 175, 55, 0.05), transparent);
-    transform: translateX(-100%);
-    transition: 0.6s;
-    z-index: -1;
+/* حاوية المعلومات (جهة اليمين) */
+.card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* محاذاة لليمين */
+    gap: 6px;
+    margin-right: 20px;
 }
 
-.card:hover::before {
-    transform: translateX(100%);
+.card-info h3 {
+    font-size: 24px;
+    color: #fff;
+    margin: 0;
 }
 
-/* ================= AVATAR DESIGN ================= */
+.platform-tag {
+    background: rgba(0, 255, 153, 0.1);
+    color: #00ff99;
+    border: 1px solid #00ff99;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.live-text {
+    color: #00ff99;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.red-dot {
+    width: 10px;
+    height: 10px;
+    background: #ff4b4b;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff4b4b;
+    animation: pulse-red 1.5s infinite;
+}
+
+/* حاوية الصورة والعداد (جهة اليسار) */
+.avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* المسافة اللي طلبتها بين الصورة والعداد */
+    min-width: 110px;
+}
+
 .avatar {
     width: 100px;
     height: 100px;
     border-radius: 50%;
     border: 3px solid #d4af37;
-    padding: 4px;
-    background: #000;
     object-fit: cover;
-    order: 2; /* وضع الصورة على اليمين (RTL) */
-    transition: 0.4s;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
-.card:hover .avatar {
-    transform: scale(1.05) rotate(5deg);
-    border-color: #fff;
-}
-
-/* ================= CARD CONTENT ================= */
-.card-info {
-    flex-grow: 1;
-    text-align: right;
-    order: 1;
-}
-
-.card-info h3 {
-    font-size: 22px;
+.viewer-badge {
+    background: #111;
     color: #fff;
-    margin: 0 0 8px 0;
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
-}
-
-/* تاق المنصة */
-.platform-tag {
-    display: inline-block;
-    background: rgba(0, 255, 153, 0.1);
-    color: #00ff99;
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: bold;
-    border: 1px solid rgba(0, 255, 153, 0.3);
-    margin-bottom: 10px;
-    letter-spacing: 1px;
+    padding: 3px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 /* زر دخول القناة */
 .btn-visit {
-    display: inline-block;
-    background: var(--gold);
+    background: linear-gradient(45deg, #d4af37, #f9f295);
     color: #000 !important;
     padding: 10px 25px;
     border-radius: 12px;
     font-weight: bold;
-    font-size: 14px;
     text-decoration: none;
-    transition: 0.3s;
     margin-top: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-.btn-visit:hover {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
-    transform: scale(1.05);
+@keyframes pulse-red {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 75, 75, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
 }
 
-/* ================= LIVE INDICATORS ================= */
-.live-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: bold;
-    color: #00ff99;
-}
-
-.viewer-count {
+/* النجمة */
+.fav-star {
     position: absolute;
-    bottom: 15px;
-    left: 15px; /* وضع العداد في الزاوية السفلى اليسرى */
-    background: rgba(0, 0, 0, 0.7);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    top: 15px;
+    left: 15px;
+    font-size: 22px;
+    color: #444;
+    cursor: pointer;
 }
+.fav-star.active { color: #d4af37; }
 
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    background: #ff4b4b;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(0.9); opacity: 0.7; }
-    50% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(0.9); opacity: 0.7; }
-}
 
 /* ================= FILTERS & FAVS ================= */
 .filter-container {
@@ -549,72 +526,47 @@ nav {
 
 
 
- <div class="grid">
+<div class="grid">
     <% if (streamers && streamers.length > 0) { %>
         <% streamers.forEach(function(s) { %>
-            <!-- استخدمنا s بدل streamer لأنك عرفتها في الـ function(s) -->
-    <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
-    
-    <!-- النجمة للمفضلة -->
-    <div style="position:absolute; top:15px; left:15px; z-index: 10;">
-        <span class="fav-star" data-user="<%= s.kickUsername %>" onclick="toggleFavorite('<%= s.kickUsername %>')">☆</span>
-    </div>
+            <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
+                
+                <!-- 1. النجمة (تظهر فوق الصورة في جهة اليسار) -->
+                <span class="fav-star" style="position:absolute; top:15px; left:15px; z-index:10;" data-user="<%= s.kickUsername %>" onclick="toggleFavorite('<%= s.kickUsername %>')">☆</span>
 
-    <!-- معلومات الستريمر -->
-    <div class="card-info">
-        <div class="platform-tag">KICK</div>
-        <h3><%= s.kickUsername %></h3>
-        
-        <% if (s.isLive) { %>
-            <div style="color: #00ff99; font-size: 13px;">🔴 مباشر الآن</div>
-            <div class="viewer-count">
-                <span class="dot"></span> <%= s.viewers %>
-            </div>
-        <% } else { %>
-            <div style="color: #666; font-size: 13px;">غير متصل</div>
-        <% } %>
+                <!-- 2. قسم المعلومات (الجهة اليمنى) -->
+                <div class="card-info">
+                    <div class="platform-tag">KICK</div>
+                    <h3><%= s.kickUsername %></h3>
+                    
+                    <% if (s.isLive) { %>
+                        <div class="live-text">
+                            مباشر الآن <span class="red-dot"></span>
+                        </div>
+                    <% } else { %>
+                        <div style="color: #666; font-size: 14px;">غير متصل</div>
+                    <% } %>
 
-       <a href="<%= 'https://kick.com/' + s.kickUsername %>" target="_blank" class="btn-visit">
-            مشاهدة القناة
-        </a>
-    </div>
+                    <a href="<%= 'https://kick.com/' + s.kickUsername %>" target="_blank" class="btn-visit">
+                        مشاهدة القناة
+                    </a>
+                </div>
 
-    <!-- صورة الستريمر -->
-    <img src="<%= s.profilePic || '/logo.png' %>" 
-         class="avatar" 
-         alt="avatar" 
-         onerror="this.src='/logo.png'">
+                <!-- 3. قسم الصورة والعداد (الجهة اليسرى) -->
+                <div class="avatar-container">
+                    <img src="<%= s.profilePic || '/logo.png' %>" class="avatar" onerror="this.src='/logo.png'">
+                    <% if (s.isLive) { %>
+                        <div class="viewer-badge"><%= s.viewers %></div>
+                    <% } %>
+                </div>
 
-</div>
-                <!-- تصليح رابط الصورة وصورة احتياطية في حال الفشل -->
-                <img src="<%= s.profilePic || '/logo.png' %>" 
-     class="avatar" 
-     alt="avatar" 
-     onerror="this.src='/logo.png'">
-
-
-                <h3 style="margin: 10px 0;"><%= s.kickUsername %></h3>
-
-                <% if (s.isLive) { %>
-                    <div style="color: #00ff99; font-weight: bold; margin-bottom: 10px;">
-                         🔴 مباشر الآن
-                         <br>
-                         <span style="font-size: 14px; color: #d4af37;">👀 <%= s.viewers %> مشاهد</span>
-                    </div>
-                <% } else { %>
-                    <div style="color: #666; margin-bottom: 10px;">غير متصل</div>
-                <% } %>
-
-                <!-- تصليح رابط القناة (إضافة السلاش /) -->
-                <a href="https://kick.com/<%= s.kickUsername %>" target="_blank" class="btn">
-                    <%= s.isLive ? 'دخول البث' : 'دخول القناة' %>
-                </a>
-            </div>
+            </div> <!-- نهاية الكرت -->
         <% }); %>
     <% } else { %>
-        <div style="text-align:center; color:#777; font-size:20px; grid-column: 1 / -1;">🚫 لا يوجد ستريمرز حالياً</div>
+        <div style="text-align:center; color:#777; grid-column: 1/-1; padding: 50px;">🚫 لا يوجد ستريمرز حالياً</div>
     <% } %>
 </div>
+
 
         </div>
     </div>
