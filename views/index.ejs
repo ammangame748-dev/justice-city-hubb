@@ -413,15 +413,18 @@ nav {
 
 /* النجمة في أقصى الزاوية */
 .fav-star {
-    position: absolute;
-    top: 5px;    /* قللنا الرقم عشان تطلع لفوق بالزاوية */
-    left: 5px;   /* قللنا الرقم عشان تروح لأقصى اليسار */
-    font-size: 20px; /* صغرنا الحجم شوي لتناسب الزاوية الضيقة */
-    color: #444;
+    position: absolute !important; /* كلمة important بتجبرها تطبق الأمر */
+    top: 10px !important;
+    left: 10px !important;
+    right: auto !important; /* عشان نلغي أي تأثير لليمين */
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.3); /* لون خفيف عشان ما تخرب الشكل */
     cursor: pointer;
-    z-index: 50; /* رفعنا الرقم عشان تضمن إنها فوق كل الطبقات */
+    z-index: 100; /* أعلى من كل الطبقات المتحركة */
     transition: 0.3s;
 }
+
+
 
 .fav-star.active { 
     color: #d4af37; 
