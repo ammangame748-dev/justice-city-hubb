@@ -1,41 +1,34 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <meta name="referrer" content="no-referrer">
    <link rel="icon" type="image/png" href="/logo.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Justice City | Hub الملكي</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body::before {
+body::before {
     content: "";
     position: fixed;
     top: 50%;
     left: 50%;
-    width: 650px;
-    height: 650px;
+    width: 800px;
+    height: 800px;
     background: url('/logo.png') no-repeat center;
     background-size: contain;
-    opacity: 0.04;
+    opacity: 0.05;
     transform: translate(-50%, -50%);
     z-index: -1;
     pointer-events: none;
-    filter: blur(0.5px) drop-shadow(0 0 60px rgba(212,175,55,0.3));
+    filter: blur(1px) drop-shadow(0 0 80px rgba(212,175,55,0.3));
+    animation: floatLogo 12s ease-in-out infinite;
 }
-        body::before {
-    content: "";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 550px;
-    height: 550px;
-    background: url('/logo.png') no-repeat center;
-    background-size: contain;
-    opacity: 0.06;
-    transform: translate(-50%, -50%);
-    z-index: -1;
-    pointer-events: none;
-    filter: drop-shadow(0 0 40px rgba(212,175,55,0.25));
+
+@keyframes floatLogo {
+    0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    50% { transform: translate(-50%, -48%) scale(1.05) rotate(3deg); }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
 }
         /* تنسيق جعل النافذة تظهر في منتصف الشاشة تماماً */
 #apply-modal {
@@ -150,7 +143,8 @@
             padding: 15px 50px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
             position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(212, 175, 55, 0.3);
         }
-        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: bold; padding: 8px 20px; border-radius: 8px; transition: 0.3s; }
+        .nav-links a {
+color: white; text-decoration: none; margin-left: 20px; font-weight: bold; padding: 8px 20px; border-radius: 8px; transition: 0.3s; }
         .btn-apply { border: 1px solid #d4af37; color: #d4af37 !important; }
         .btn-apply:hover { background: #d4af37; color: black !important; }
 
@@ -226,6 +220,17 @@
     box-shadow: var(--neon-gold);
     border-color: transparent;
 }
+.fav-star {
+    font-size: 22px;
+    color: #777;
+    transition: 0.3s;
+    user-select: none;
+}
+
+.fav-star.active {
+    color: #d4af37;
+    text-shadow: 0 0 10px #d4af37;
+}
 
     </style>
     <!-- حط هاد السطر قبل </head> -->
@@ -249,6 +254,7 @@
     </div>
     
     <div class="nav-links">
+        <a href="javascript:void(0)" onclick="showFavorites()">⭐ المفضلة</a>
             <a href="https://paypal.me/HosamHamaideh" target="_blank" class="btn-support">☕ ادعم المشروع</a>
         <a href="javascript:void(0)" onclick="toggleRankings()">🏆 المتصدرين</a>
         <a href="javascript:void(0)" onclick="openModal()" class="btn-apply">🔗 أضف قناتك</a>
@@ -321,12 +327,17 @@
         <% streamers.forEach(function(s) { %>
             <!-- استخدمنا s بدل streamer لأنك عرفتها في الـ function(s) -->
             <div class="card <%= s.isLive ? 'live' : '' %>" data-status="<%= s.isLive ? 'live' : 'offline' %>">
-                
+                <div style="position:absolute; top:10px; left:10px; cursor:pointer;">
+    <span class="fav-star" data-user="<%= s.kickUsername %>" onclick="toggleFavorite('<%= s.kickUsername %>')">
+        ☆
+    </span>
+</div>
                 <!-- تصليح رابط الصورة وصورة احتياطية في حال الفشل -->
-                <img src="<%= (s.profilePic && s.profilePic !== '') ? s.profilePic : '/logo.png' %>" 
-                     class="avatar" 
-                     alt="avatar"
-                     onerror="this.src='/logo.png'">
+                <img src="<%= s.profilePic || '/logo.png' %>" 
+     class="avatar" 
+     alt="avatar" 
+     onerror="this.src='/logo.png'">
+
 
                 <h3 style="margin: 10px 0;"><%= s.kickUsername %></h3>
 
@@ -461,6 +472,62 @@ loadParticles();
   setTimeout(function(){
      location.reload();
   }, 60000); 
+  function getFavorites() {
+    return JSON.parse(localStorage.getItem('favorites') || '[]');
+}
+
+function saveFavorites(favs) {
+    localStorage.setItem('favorites', JSON.stringify(favs));
+}
+
+function toggleFavorite(username) {
+    let favs = getFavorites();
+
+    if (favs.includes(username)) {
+        favs = favs.filter(u => u !== username);
+        alert("تم إزالة الستريمر من المفضلة");
+    } else {
+        favs.push(username);
+        alert("⭐ تم إضافة الستريمر للمفضلة");
+    }
+
+    saveFavorites(favs);
+    updateStars();
+}
+
+function updateStars() {
+    const favs = getFavorites();
+
+    document.querySelectorAll('.fav-star').forEach(star => {
+        const user = star.getAttribute('data-user');
+
+        if (favs.includes(user)) {
+            star.classList.add('active');
+            star.textContent = '★';
+        } else {
+            star.classList.remove('active');
+            star.textContent = '☆';
+        }
+    });
+}
+
+function showFavorites() {
+    const favs = getFavorites();
+    const cards = document.querySelectorAll('.grid .card');
+
+    cards.forEach(card => {
+        const username = card.querySelector('h3').innerText;
+
+        if (favs.includes(username)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// تشغيل النجوم عند تحميل الصفحة
+updateStars();
 </script>
 
 </body>
