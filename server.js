@@ -33,67 +33,84 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   status: { type: String, default: 'pending' }
 }));
 
-
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 async function updateStatus() {
-  console.log("🔄 جاري التحديث باستخدام المتصفح (Puppeteer)...");
-  
+  console.log("🔄 جاري التحديث المضمون...");
   const streamers = await Streamer.find({});
+  if (streamers.length === 0) return;
+
   let browser;
-
   try {
-browser = await puppeteer.launch({
-  headless: "new",
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
-});
-
-
+    browser = await puppeteer.launch({
+      headless: "new", // تأكد أن النسخة حديثة
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
     const page = await browser.newPage();
-    
-    // محاكاة متصفح حقيقي عشان ما ننكشف
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+    // تقليل استهلاك الموارد: منع الصور والخطوط من التحميل
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (['image', 'font', 'stylesheet'].includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
 
     for (const streamer of streamers) {
       try {
-        console.log(`🔍 فحص: ${streamer.kickUsername}`);
+        const cleanName = streamer.kickUsername.trim().toLowerCase();
+        console.log(`🔍 فحص قناة: ${cleanName}`);
         
-        // الانتقال لرابط الـ API الخاص بالقناة
-        await page.goto(`https://kick.com/api/v2/channels/${streamer.kickUsername}`, {
-          waitUntil: 'networkidle2', // انتظر لينتهي تحميل البيانات
-          timeout: 30000
+        // الإصلاح هنا: أضفنا / و علامة $
+        await page.goto(`https://kick.com/${cleanName}`, {
+          waitUntil: 'networkidle0', 
+          timeout: 30000 
         });
 
-        // سحب محتوى الصفحة (JSON)
-        const content = await page.evaluate(() => document.querySelector("pre")?.innerText || document.body.innerText);
-        const data = JSON.parse(content);
+        // انتظر ثواني بسيطة للتأكد من تحميل الـ DOM
+        await new Promise(r => setTimeout(r, 3000));
 
-        if (data && data.channel) {
-          const isLive = data.channel.is_live;
-          const viewers = data.channel.viewer_count || 0;
-          const profilePic = data.channel?.user?.profile_pic || streamer.profilePic;
+        const statusData = await page.evaluate(() => {
+          // فحص علامة الـ LIVE بأكثر من طريقة
+          const isLive = !!document.querySelector('.v-live-indicator') || 
+                         !!document.querySelector('[data-is-live="true"]') ||
+                         document.body.innerText.includes('LIVE');
+          
+          const viewersEl = document.querySelector('.v-live-indicator__viewer-count') || 
+                            document.querySelector('.viewer-count');
+          
+          let vCount = 0;
+          if (viewersEl) {
+              vCount = parseInt(viewersEl.innerText.replace(/[^0-9]/g, '')) || 0;
+          }
 
-          await Streamer.updateOne(
-            { _id: streamer._id },
-            { $set: { isLive, viewers, profilePic } }
-          );
-          console.log(`✅ ${streamer.kickUsername} | مباشر: ${isLive} | 👁 ${viewers}`);
-        }
+          return { isLive, viewers: vCount };
+        });
+
+        await Streamer.updateOne(
+          { _id: streamer._id },
+          { $set: { 
+              isLive: statusData.isLive, 
+              viewers: statusData.viewers
+          }}
+        );
+        console.log(`✅ ${cleanName} | لايف: ${statusData.isLive} | المشاهدات: ${statusData.viewers}`);
+
       } catch (err) {
-        console.error(`❌ خطأ في معالجة ${streamer.kickUsername}:`, err.message);
+        console.error(`❌ خطأ في فحص ${streamer.kickUsername}:`, err.message);
       }
     }
   } catch (error) {
-    console.error("❌ فشل تشغيل المتصفح:", error.message);
+    console.error("❌ خطأ متصفح كلي:", error.message);
   } finally {
-    if (browser) await browser.close(); // إغلاق المتصفح لتوفير الرام
-    console.log("🏁 انتهت عملية التحديث.");
+    if (browser) await browser.close();
+    console.log("🏁 انتهت الدورة.");
   }
 }
 
 
 // تحديث كل 3 دقائق (180000 مللي ثانية)
-setInterval(updateStatus, 180000);
+setInterval(updateStatus, 4000);
 
 // تشغيل الفحص فور تشغيل السيرفر
 updateStatus();
@@ -150,6 +167,27 @@ app.get('/admin/accept/:id', async (req, res) => {
     updateStatus();
   }
   res.redirect('/admin-justice?pass=1234');
+});
+// ✅ راوت رفض طلبات الانضمام
+app.get('/admin/reject/:id', async (req, res) => {
+  if (req.query.pass !== "1234") return res.status(403).send("❌ غير مصرح");
+  try {
+    await Application.findByIdAndDelete(req.params.id);
+    res.redirect('/admin-justice?pass=1234');
+  } catch (err) {
+    res.send("خطأ في الحذف: " + err.message);
+  }
+});
+
+// ✅ راوت طرد/حذف ستريمر موجود بالموقع
+app.get('/admin/delete-streamer/:id', async (req, res) => {
+  if (req.query.pass !== "1234") return res.status(403).send("❌ غير مصرح");
+  try {
+    await Streamer.findByIdAndDelete(req.params.id);
+    res.redirect('/admin-justice?pass=1234');
+  } catch (err) {
+    res.send("خطأ في الحذف: " + err.message);
+  }
 });
 
 // ================= SERVER =================
