@@ -585,17 +585,18 @@ nav {
                     <h3><%= s.kickUsername %></h3>
                     
                     <% if (s.isLive) { %>
-                        <div class="live-text">
-                            مباشر الآن <span class="red-dot"></span>
-                        </div>
+                       <div class="live-text">
+    LIVE <span class="red-dot"></span>
+</div>
+
                     <% } else { %>
                         <div style="color: #666; font-size: 14px;">غير متصل</div>
                     <% } %>
 
-                    <a href="<%= 'https://kick.com/' + s.kickUsername %>" target="_blank" class="btn-visit">
-                        مشاهدة القناة
-                    </a>
-                </div>
+               <a href="<%= 'https://kick.com/' + s.kickUsername %>" target="_blank" class="btn-visit">
+    <%= s.isLive ? 'مشاهدة البث' : 'زيارة القناة' %>
+</a>
+</div>
 
                 <!-- 3. قسم الصورة والعداد (الجهة اليسرى) -->
                 <div class="avatar-container">
