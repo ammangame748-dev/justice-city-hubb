@@ -1,12 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const axios = require('axios');
 
 // ✅ تم إزالة مكتبة Pusher لأنها تسبب الخطأ ولست بحاجة لها مع وجود دالة التحديث الدوري
 const app = express();
 
-puppeteer.use(StealthPlugin());
+
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
@@ -32,7 +31,7 @@ const Application = mongoose.model('Application', new mongoose.Schema({
   discordName: String,
   status: { type: String, default: 'pending' }
 }));
-const axios = require('axios');
+
 
 async function updateStatus() {
   console.log("🔄 تحديث من Kick API...");
@@ -45,14 +44,16 @@ async function updateStatus() {
       const username = streamer.kickUsername.toLowerCase().trim();
 
       // جلب بيانات القناة
-      const res = await axios.get(`https://kick.com/api/v2/channels/${username}`);
+      const res = await axios.get(`https://kick.com/api/v2/channels/${username}`, {
+  timeout: 10000
+});
       const data = res.data;
 
-      const isLive = data.livestream !== null;
+      const isLive = !!data.livestream;
 
       const viewers = isLive ? data.livestream.viewer_count : 0;
 
-      const profilePic = data.user?.profile_pic || null;
+     const profilePic = data.user?.profile_pic || data.user?.avatar || null;
 
       await Streamer.updateOne(
         { _id: streamer._id },
