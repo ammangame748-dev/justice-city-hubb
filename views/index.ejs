@@ -480,6 +480,29 @@ nav {
     .viewer-count { position: static; margin-top: 10px; justify-content: center; }
 }
 
+/* --- الشعار المتحرك خلف البطاقات --- */
+.bg-floating-logo {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* حجم الشعار */
+    height: 600px;
+    background: url('/logo.png') no-repeat center;
+    background-size: contain;
+    opacity: 0.05; /* شفافية قليلة عشان ما يغطي على الكلام */
+    transform: translate(-50%, -50%);
+    z-index: -2; /* يضل ورا الكروت وورا الجزيئات */
+    pointer-events: none; /* عشان ما يمنع الضغط على الأزرار */
+    filter: blur(2px) drop-shadow(0 0 50px rgba(212, 175, 55, 0.2));
+    animation: floatLogo 15s ease-in-out infinite;
+}
+
+@keyframes floatLogo {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+    50% { transform: translate(-50%, -48%) rotate(5deg) scale(1.1); }
+    100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+}
+
 
     </style>
     <!-- حط هاد السطر قبل </head> -->
@@ -487,6 +510,8 @@ nav {
 
 </head>
 <body>
+        <div class="bg-floating-logo"></div> <!-- هاد هو الشعار المتحرك -->
+    <div id="tsparticles"></div>
 <div class="bg-logo"></div>
     <div id="tsparticles"></div>
 
