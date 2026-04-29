@@ -44,8 +44,13 @@ async function updateStatus() {
       const username = streamer.kickUsername.toLowerCase().trim();
 
       // جلب بيانات القناة
-      const res = await axios.get(`https://kick.com/api/v2/channels/${username}`, {
-  timeout: 10000
+const res = await axios.get(`https://kick.com/api/v2/channels/${username}`, {
+  timeout: 10000,
+  headers: {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json",
+    "Referer": "https://kick.com/"
+  }
 });
       const data = res.data;
 
