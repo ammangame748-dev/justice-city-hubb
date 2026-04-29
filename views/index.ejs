@@ -406,6 +406,9 @@ nav {
     color: #d4af37;
     text-shadow: 0 0 10px #d4af37;
 }
+#social-section { display: none; justify-content: center; padding: 60px 20px; }
+.social-card { background: #0a0a0a; border: 2px solid #1DA1F2; border-radius: 20px; padding: 30px; text-align: center; max-width: 450px; width: 100%; box-shadow: 0 0 20px rgba(29, 161, 242, 0.2); }
+.twitter-btn { display: block; background: #1DA1F2; color: #fff !important; padding: 12px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 20px; }
 
     </style>
     <!-- حط هاد السطر قبل </head> -->
@@ -429,6 +432,7 @@ nav {
     </div>
     
     <div class="nav-links">
+        <a href="javascript:void(0)" onclick="showSocial()">🌐 Social Justice</a>
         <a href="javascript:void(0)" onclick="showFavorites()">⭐ المفضلة</a>
             <a href="https://paypal.me/HosamHamaideh" target="_blank" class="btn-support">☕ ادعم المشروع</a>
         <a href="javascript:void(0)" onclick="toggleRankings()">🏆 المتصدرين</a>
@@ -703,6 +707,26 @@ function showFavorites() {
 
 // تشغيل النجوم عند تحميل الصفحة
 updateStars();
+<div id="social-section">
+    <div class="social-card">
+        <div style="color: #1DA1F2; font-weight: bold; margin-bottom: 10px;">تويتر JUSTICE</div>
+        <h2 style="margin: 0; color: #fff;">Social Justice Hub</h2>
+        <a href="https://x.com" target="_blank" class="twitter-btn">زيارة الحساب الرسمي</a>
+        <button onclick="hideSocial()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">إغلاق</button>
+    </div>
+</div>
+
+</script>
+<script>
+function showSocial() {
+    document.querySelector('.container').style.display = 'none';
+    document.querySelector('.stats-grid').style.display = 'none';
+    document.querySelector('.filter-container').style.display = 'none';
+    document.getElementById('social-section').style.display = 'flex';
+}
+function hideSocial() {
+    location.reload(); // أسهل طريقة عشان ترجع كل شي مكانه
+}
 </script>
 
 </body>
