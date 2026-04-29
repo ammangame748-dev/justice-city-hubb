@@ -275,12 +275,12 @@ nav {
     padding: 30px 20px;
     text-align: center;
     transition: 0.5s;
-    overflow: hidden; /* عشان تأثير الألوان ما يطلع برا الزوايا */
+    overflow: hidden; 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 1;
+    z-index: 1; /* أساس الطبقات */
 }
 
 /* تأثير الألوان المتحركة في الخلفية */
@@ -300,23 +300,29 @@ nav {
         #d4af37
     );
     animation: rotateGlow 6s linear infinite;
-    z-index: -2;
+    z-index: -2; /* تحت الكل */
 }
 
 /* الطبقة السوداء اللي فوق الألوان عشان يضل بس الإطار اللي مبين */
 .card::after {
     content: "";
     position: absolute;
-    inset: 3px; /* سمك الإطار */
+    inset: 3px; 
     background: #0f0f0f;
     border-radius: 18px;
-    z-index: -1;
+    z-index: -1; /* فوق الألوان وتحت المحتوى */
 }
 
 /* حركة دوران الألوان */
 @keyframes rotateGlow {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* أهم إضافة: تخلي النجمة والأزرار فوق كل شيء وقابلة للضغط */
+.fav-star, .btn, .avatar, h3 {
+    position: relative;
+    z-index: 10;
 }
 
 /* تحسين شكل صورة الستريمر */
@@ -409,7 +415,9 @@ nav {
 #social-section { display: none; justify-content: center; padding: 60px 20px; }
 .social-card { background: #0a0a0a; border: 2px solid #1DA1F2; border-radius: 20px; padding: 30px; text-align: center; max-width: 450px; width: 100%; box-shadow: 0 0 20px rgba(29, 161, 242, 0.2); }
 .twitter-btn { display: block; background: #1DA1F2; color: #fff !important; padding: 12px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 20px; }
-
+nav {
+    z-index: 9999 !important;
+}
     </style>
     <!-- حط هاد السطر قبل </head> -->
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
@@ -719,11 +727,18 @@ updateStars();
 </script>
 <script>
 function showSocial() {
-    document.querySelector('.container').style.display = 'none';
-    document.querySelector('.stats-grid').style.display = 'none';
-    document.querySelector('.filter-container').style.display = 'none';
+    // نخفي بس المحتوى اللي بالنص ونخلي الـ Navbar
+    const mainContent = document.querySelector('.container');
+    const stats = document.querySelector('.stats-grid');
+    const filters = document.querySelector('.filter-container');
+    
+    if(mainContent) mainContent.style.display = 'none';
+    if(stats) stats.style.display = 'none';
+    if(filters) filters.style.display = 'none';
+    
     document.getElementById('social-section').style.display = 'flex';
 }
+
 function hideSocial() {
     location.reload(); // أسهل طريقة عشان ترجع كل شي مكانه
 }
