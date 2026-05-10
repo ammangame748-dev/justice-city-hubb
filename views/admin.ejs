@@ -1,158 +1,83 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الملكية | Justice City</title>
-    <link href="https://googleapis.com" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #050505;
-            --gold: linear-gradient(45deg, #d4af37, #f9f295, #d4af37);
-            --card-bg: rgba(20, 20, 20, 0.9);
-            --neon-gold: 0 0 15px rgba(212, 175, 55, 0.3);
-        }
-        body { 
-            background: var(--bg); 
-            color: white; 
-            font-family: 'Changa', sans-serif; 
-            margin: 0; 
-            padding: 40px 20px;
-            background-image: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
-        }
-        .container { max-width: 1000px; margin: 0 auto; }
-        h2 { 
-            color: #d4af37; 
-            border-right: 5px solid #d4af37; 
-            padding-right: 15px; 
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .count-badge { background: #d4af37; color: black; padding: 2px 12px; border-radius: 20px; font-size: 14px; }
-        
-        table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0 10px; 
-            margin-bottom: 40px; 
-        }
-        th { 
-            background: transparent; 
-            color: #d4af37; 
-            padding: 15px; 
-            text-align: center; 
-            border-bottom: 2px solid rgba(212,175,55,0.2);
-        }
-        td { 
-            padding: 15px; 
-            background: var(--card-bg); 
-            text-align: center; 
-            border: 1px solid rgba(212,175,55,0.1);
-        }
-        tr td:first-child { border-radius: 0 15px 15px 0; }
-        tr td:last-child { border-radius: 15px 0 0 15px; }
-
-        .btn { 
-            padding: 8px 20px; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            color: white; 
-            cursor: pointer; 
-            transition: 0.3s;
-            border: none;
-            font-family: 'Changa';
-            font-size: 13px;
-        }
-        .btn-accept { background: #28a745; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2); }
-        .btn-accept:hover { background: #218838; transform: scale(1.05); }
-        
-        .btn-reject { background: #dc3545; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2); }
-        .btn-reject:hover { background: #c82333; transform: scale(1.05); }
-
-        .back-link { 
-            display: inline-block; 
-            margin-bottom: 30px; 
-            color: #d4af37; 
-            text-decoration: none; 
-            font-weight: bold;
-            border: 1px solid #d4af37;
-            padding: 8px 20px;
-            border-radius: 10px;
-        }
-        .back-link:hover { background: #d4af37; color: black; }
-
-        .status-live { color: #00ff99; font-weight: bold; animation: blink 1.5s infinite; }
-        .status-off { color: #666; }
-        
-        @keyframes blink { 50% { opacity: 0.5; } }
-    </style>
+    <title>لوحة التحكم | Black List</title>
+    <link rel="icon" type="image/png" href="/black.png">
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body>
 
-    <div class="container">
-        <a href="/" class="back-link">🔙 العودة للموقع الرئيسي</a>
+<body style="padding: 40px 10%;">
 
-        <h2>
-            <span>👑 طلبات الانضمام</span>
-            <span class="count-badge"><%= apps.length %> طلب</span>
-        </h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>اسم القناة</th>
-                    <th>ديسكورد</th>
-                    <th>الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (apps.length === 0) { %>
-                    <tr><td colspan="3" style="color: #666;">لا توجد طلبات جديدة حالياً</td></tr>
+    <div class="animated-bg"></div>
+
+    <header style="text-align: center; margin-bottom: 50px;">
+        <h1 style="color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue);">لوحة عدالة بلاك ليست</h1>
+        <p style="color: #888;">إدارة طلبات الانضمام والستريمرز الحاليين</p>
+    </header>
+
+    <!-- قسم طلبات الانضمام الجديدة -->
+    <section>
+        <h2 style="color: #fff; border-right: 4px solid var(--neon-blue); padding-right: 15px;">طلبات معلقة (<%=
+                apps.length %>)</h2>
+        <div class="cards-grid" style="grid-template-columns: 1fr;">
+            <% if (apps.length===0) { %>
+                <p style="color: #555; text-align: center;">لا توجد طلبات جديدة حالياً...</p>
                 <% } %>
-                <% apps.forEach(app => { %>
-                    <tr>
-                        <td style="font-weight: bold;"><%= app.kickUsername %></td>
-                        <td><%= app.discordName || 'غير متوفر' %></td>
-                        <td>
-                            <a href="/admin/accept/<%= app._id %>?pass=1234" class="btn btn-accept">قبول ✅</a>
-                            <a href="/admin/reject/<%= app._id %>?pass=1234" class="btn btn-reject" onclick="return confirm('هل أنت متأكد من رفض الطلب؟')">رفض ❌</a>
-                        </td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
+                    <% apps.forEach(app=> { %>
+                        <div class="card" style="height: 80px; border-color: #ffcc00;">
+                            <div class="card-content"
+                                style="flex-direction: row; display: flex; justify-content: space-around; width: 100%; align-items: center;">
+                                <div style="text-align: right;">
+                                    <h3 style="font-size: 20px;">
+                                        <%= app.kickUsername %>
+                                    </h3>
+                                    <small style="color: #888;">ديسكورد: <%= app.discordName %></small>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <a href="/admin/accept/<%= app._id %>?pass=1234" class="watch-btn"
+                                        style="background: #53fc18;">✅ قبول</a>
+                                    <a href="/admin/reject/<%= app._id %>?pass=1234" class="watch-btn"
+                                        style="background: #ff4b4b; color: white;">❌ رفض</a>
+                                </div>
+                            </div>
+                        </div>
+                        <% }) %>
+        </div>
+    </section>
 
-        <h2>
-            <span>🚫 التحكم بالستريمرز الحاليين</span>
-            <span class="count-badge"><%= streamers.length %> قناة</span>
-        </h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>الصورة</th>
-                    <th>الاسم</th>
-                    <th>الحالة الحالية</th>
-                    <th>الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% streamers.forEach(s => { %>
-                    <tr>
-                        <td><img src="<%= s.profilePic || '/logo.png' %>" width="45" height="45" style="border-radius: 10px; border: 1px solid #d4af37;"></td>
-                        <td style="font-weight: bold;"><%= s.kickUsername %></td>
-                        <td class="<%= s.isLive ? 'status-live' : 'status-off' %>">
-                            <%= s.isLive ? '🔴 مباشر الآن' : '⚪ غير متصل' %>
-                        </td>
-                        <td>
-                            <a href="/admin/delete-streamer/<%= s._id %>?pass=1234" class="btn btn-reject" onclick="return confirm('⚠️ هل أنت متأكد من طرد هذا الستريمر من الموقع نهائياً؟')">طرد من الموقع 🗑️</a>
-                        </td>
-                    </tr>
+    <hr style="margin: 50px 0; border: 0; border-top: 1px solid #222;">
+
+    <!-- قسم إدارة الستريمرز الحاليين -->
+    <section>
+        <h2 style="color: #fff; border-right: 4px solid #ff4b4b; padding-right: 15px;">إدارة الستريمرز الحاليين</h2>
+        <div class="cards-grid" style="grid-template-columns: 1fr;">
+            <% streamers.forEach(s=> { %>
+                <div class="card" style="height: 80px; border-color: var(--neon-blue);">
+                    <div class="card-content"
+                        style="flex-direction: row; display: flex; justify-content: space-around; width: 100%; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <img src="<%= s.profilePic || '/black.png' %>"
+                                style="width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--neon-blue);">
+                            <h3 style="font-size: 20px;">
+                                <%= s.kickUsername %>
+                            </h3>
+                        </div>
+                        <a href="/admin/delete-streamer/<%= s._id %>?pass=1234" class="watch-btn"
+                            style="background: #333; color: #ff4b4b; border: 1px solid #ff4b4b;"
+                            onclick="return confirm('هل أنت متأكد من طرد هذا الستريمر؟')">🗑️ طرد</a>
+                    </div>
+                </div>
                 <% }) %>
-            </tbody>
-        </table>
+        </div>
+    </section>
+
+    <div style="text-align: center; margin-top: 50px;">
+        <a href="/" style="color: var(--neon-blue); text-decoration: none;">← العودة للموقع الرئيسي</a>
     </div>
 
 </body>
+
 </html>
