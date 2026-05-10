@@ -1,161 +1,67 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black List Hub</title>
-    <link rel="icon" type="image/png" href="/black.png">
-    <link rel="stylesheet" href="/style.css">
-    <!-- تأكد من تعديل رابط الفونت أوسوم إذا لزم الأمر -->
-    <link rel="stylesheet" href="https://cloudflare.com">
-</head>
-
-<body>
-
-    <!-- 1. شاشة الترحيب (توضع هنا لتظهر فوق كل شيء فوراً) -->
-    <div id="welcome-overlay" class="welcome-overlay">
-        <div class="intro-card">
-            <div class="card-border-animation"></div>
-            <div class="intro-content">
-                <img src="/black.png" alt="Black List Logo" class="intro-logo">
-                <p class="intro-text">
-                    لسنا مجرد مجموعة أشخاص داخل لعبة أو سيرفر… نحن كيانٌ يحمل هويةً خاصة، وهيبةً لا يستطيع أي شخص تقليدها أو الوصول إليها بسهولة.
-                </p>
-            </div>
-        </div>
+<div class="stats-grid">
+    <div class="stat-box">
+        <span class="stat-number"><%= stats.totalOrders %></span>
+        <span class="stat-desc">إجمالي الطلبات المنفذة</span>
     </div>
-
-    <div class="animated-bg"></div>
-
-    <header class="main-header">
-        <img src="/black.png" alt="Logo" class="header-logo">
-        <div class="header-btns">
-            <button class="plus-btn" onclick="openSocial()">حساباتنا</button>
-            <button class="plus-btn" onclick="openAddModal()">+ أضف قناتك</button>
-        </div>
-    </header>
-
-    <!-- الإحصائيات -->
-    <div class="stats-container">
-        <div class="stat-item"><small>الستريمرز</small>
-            <h3><%= stats.totalStreamers %></h3>
-        </div>
-        <div class="stat-item"><small>مشاهدة</small>
-            <h3 style="color: var(--neon-blue);"><%= stats.totalViewers %></h3>
-        </div>
-        <div class="stat-item"><small>نشط</small>
-            <h3 style="color: #53fc18;"><%= stats.liveNow %></h3>
-        </div>
+    <div class="stat-box">
+        <span class="stat-number" style="color: #00ff99;"><%= stats.activeNow %></span>
+        <span class="stat-desc">طلبات قيد التثبيت الآن</span>
     </div>
-
-    <!-- الفلترة -->
-    <div class="filter-container">
-        <select class="filter-select" onchange="runFilter(this.value)">
-            <option value="all">جميع القنوات</option>
-            <option value="live">البث المباشر</option>
-            <option value="offline">غير متصل</option>
-            <option value="fav">المفضلة</option>
-            <option value="high">الأعلى مشاهدة</option>
-        </select>
+    <div class="stat-box">
+        <span class="stat-number">100%</span>
+        <span class="stat-desc">ضمان ثبات (30 يوم)</span>
     </div>
+</div>
+<div class="grid">
+    <% if (services && services.length > 0) { %>
+        <% services.forEach(function(s) { %>
+            <div class="card live"> <!-- نستخدم كلاس live للحفاظ على التوهج -->
+                
+                <span class="fav-star" data-user="<%= s.targetName %>" onclick="toggleFavorite('<%= s.targetName %>')">☆</span>
 
-    <div class="cards-grid" id="mainGrid">
-        <% streamers.forEach(streamer => { %>
-            <div class="card" id="card-<%= streamer.kickUsername %>" data-viewers="<%= streamer.viewers %>" data-live="<%= streamer.isLive %>">
-                <i class="fas fa-star star-btn" onclick="toggleFav('<%= streamer.kickUsername %>')"></i>
-                <div class="profile-side">
-                    <img src="<%= streamer.profilePic || '/black.png' %>" class="profile-img">
-                    <div class="viewers-count">VIEWERS <%= streamer.viewers %></div>
+                <div class="card-info">
+                    <div class="platform-tag" style="background: #d4af37; color: #000;">
+                        <%= s.platform.toUpperCase() %>
+                    </div>
+                    <h3><%= s.targetName %></h3>
+                    
+                    <div class="live-text">
+                        جاري التثبيت <span class="red-dot" style="background: #00ff99; box-shadow: 0 0 10px #00ff99;"></span>
+                    </div>
+
+                    <div style="color: #888; font-size: 11px; margin-top: 5px;">
+                        تاريخ الانتهاء: <%= new Date(s.expiryDate).toLocaleDateString('ar-EG') %>
+                    </div>
                 </div>
-                <div class="card-content">
-                    <div class="kick-tag">KICK</div>
-                    <h3><%= streamer.kickUsername %></h3>
-                    <% if(streamer.isLive) { %>
-                        <div class="live-badge">LIVE</div><br>
-                        <a href="https://kick.com/<%= streamer.kickUsername %>" target="_blank" class="watch-btn">مشاهدة البث</a>
-                    <% } else { %>
-                        <div style="color: #555; font-size: 11px;">غير متصل</div><br>
-                        <a href="https://kick.com/<%= streamer.kickUsername %>" target="_blank" class="watch-btn offline">زيارة القناة</a>
-                    <% } %>
+
+                <div class="avatar-container">
+                    <!-- أيقونة تلقائية بناءً على المنصة -->
+                    <img src="/logos/<%= s.platform %>.png" class="avatar" onerror="this.src='/logo.png'">
+                    <div class="viewer-badge">
+                        <%= s.fakeCount %> <span style="font-size: 10px; margin-right: 4px; opacity: 0.8;">MEMBER</span>
+                    </div>
                 </div>
             </div>
-        <% }) %>
+        <% }); %>
+    <% } else { %>
+        <div style="text-align:center; color:#777; grid-column: 1/-1; padding: 50px;">🚫 لا يوجد طلبات نشطة حالياً</div>
+    <% } %>
+</div>
+<div id="apply-modal" style="display: none;">
+    <div class="card" style="width: 380px; border: 2px solid #d4af37; padding: 30px; position: relative; flex-direction: column;">
+        <h2 style="color: #d4af37; margin-bottom: 20px;">🚀 اطلب تزويد وهمي</h2>
+        <form action="/apply" method="POST">
+            <input type="text" name="targetName" placeholder="رابط الحساب أو السيرفر" required 
+                   style="display: block; width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 10px; background: #000; color: #fff; border: 1px solid #d4af37; border-radius: 8px;">
+            
+            <select name="platform" style="display: block; width: 100%; padding: 12px; margin-bottom: 10px; background: #000; color: #fff; border: 1px solid #d4af37; border-radius: 8px;">
+                <option value="discord">Discord</option>
+                <option value="tiktok">TikTok</option>
+                <option value="instagram">Instagram</option>
+            </select>
+
+            <button type="submit" class="btn-visit" style="width: 100%; border: none; cursor: pointer;">إرسال الطلب للمراجعة</button>
+        </form>
+        <button onclick="closeModal()" style="background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">إغلاق</button>
     </div>
-
-    <!-- المودالات -->
-    <div id="socialModal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="margin-bottom:20px;">حسابات عصابة بلاك ليست</h3>
-            <div style="display: grid; gap: 10px;">
-                <a href="https://x.com" target="_blank" class="plus-btn" style="text-decoration:none; background:#1da1f2;">تويتر X</a>
-                <a href="https://discord.gg" target="_blank" class="plus-btn" style="text-decoration:none; background:#5865f2;">ديسكورد</a>
-            </div>
-            <button onclick="closeSocial()" style="margin-top:20px; background:none; color:gray; border:none; cursor:pointer;">إغلاق</button>
-        </div>
-    </div>
-
-    <div id="addModal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="color: var(--neon-blue);">انضم للمنصة</h3>
-            <form action="/apply" method="POST">
-                <input type="text" name="kickUser" placeholder="اسمك في Kick" required style="width:100%; padding:10px; margin:10px 0; background:#222; border:none; color:white; border-radius:8px;">
-                <button type="submit" class="plus-btn" style="width:100%; background:var(--neon-blue); color:black;">إرسال الطلب</button>
-                <button type="button" onclick="closeAddModal()" style="margin-top:15px; background:none; color:gray; border:none; cursor:pointer;">إلغاء</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script>
-        // 1. سكربت إغلاق شاشة الترحيب
-        setTimeout(() => {
-            const overlay = document.getElementById('welcome-overlay');
-            if(overlay) {
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 1000);
-            }
-        }, 7000);
-
-        // 2. وظائف المودالات والمفضلة
-        function openSocial() { document.getElementById('socialModal').style.display = 'flex'; }
-        function closeSocial() { document.getElementById('socialModal').style.display = 'none'; }
-        function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-        function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
-
-        function toggleFav(user) {
-            let favs = JSON.parse(localStorage.getItem('bl_favs')) || [];
-            const index = favs.indexOf(user);
-            index > -1 ? favs.splice(index, 1) : favs.push(user);
-            localStorage.setItem('bl_favs', JSON.stringify(favs));
-            updateStars();
-        }
-
-        function updateStars() {
-            let favs = JSON.parse(localStorage.getItem('bl_favs')) || [];
-            document.querySelectorAll('.card').forEach(c => {
-                const user = c.id.replace('card-', '');
-                c.querySelector('.star-btn').classList.toggle('active', favs.includes(user));
-            });
-        }
-
-        function runFilter(val) {
-            const cards = Array.from(document.querySelectorAll('.card'));
-            const favs = JSON.parse(localStorage.getItem('bl_favs')) || [];
-            const grid = document.getElementById('mainGrid');
-            cards.forEach(c => {
-                c.style.display = 'flex';
-                const user = c.id.replace('card-', '');
-                if (val === 'live' && c.dataset.live === 'false') c.style.display = 'none';
-                if (val === 'offline' && c.dataset.live === 'true') c.style.display = 'none';
-                if (val === 'fav' && !favs.includes(user)) c.style.display = 'none';
-            });
-            if (val === 'high') {
-                cards.sort((a, b) => b.dataset.viewers - a.dataset.viewers);
-                grid.innerHTML = ""; cards.forEach(c => grid.appendChild(c));
-            }
-        }
-        window.onload = updateStars;
-    </script>
-</body>
-</html>
+</div>
