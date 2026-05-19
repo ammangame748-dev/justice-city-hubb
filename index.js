@@ -92,6 +92,9 @@ app.get('/login', (req, res) => {
 // =====================================================
 // CALLBACK (تعديل طفيف لضمان دقة جلب سيرفرات الأدمن)
 // =====================================================
+// =====================================================
+// CALLBACK (تم التحديث لضمان جلب السيرفرات بدقة عبر الصلاحيات)
+// =====================================================
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
     if (!code) return res.send('No Code');
@@ -124,20 +127,28 @@ app.get('/callback', async (req, res) => {
         const guilds = await guildRes.json();
         if (!Array.isArray(guilds)) return res.send('Guild Error');
 
-        // السيرفرات المشتركة مع البوت فقط (بدون تعقيد permissions)
-const botGuilds = client.guilds.cache.map(g => g.id);
+        // جلب السيرفرات التي يمتلك فيها المستخدم صلاحية ADMINISTRATOR (0x8)
+        // أو يكون هو مالك السيرفر (Owner)
+        const adminGuilds = guilds.filter(g => {
+            const isOwner = g.owner === true;
+            const isAdmin = (BigInt(g.permissions) & BigInt(0x8)) === BigInt(0x8);
+            return isOwner || isAdmin;
+        });
 
-const mutualGuilds = guilds.filter(g => botGuilds.includes(g.id));
+        // تصفية السيرفرات الإدارية لتشمل فقط السيرفرات المشتركة المتواجد فيها البوت حالياً
+        const botGuildIds = client.guilds.cache.map(g => g.id);
+        const finalMutualGuilds = adminGuilds.filter(g => botGuildIds.includes(g.id));
 
-req.session.user = user;
-req.session.guilds = mutualGuilds;
+        req.session.user = user;
+        req.session.guilds = finalMutualGuilds;
 
-res.redirect('/');
+        res.redirect('/');
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.send('OAuth Error');
     }
 });
+
 
 // =====================================================
 // DASHBOARD (تصميم خارق وجديد كلياً بنظام كروت السيرفرات)
