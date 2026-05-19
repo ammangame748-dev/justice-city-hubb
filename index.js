@@ -2,7 +2,8 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder, PermissionsBitField, ChannelType } = require('discord.js');
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs'); // استدعاء حزمة نظام الملفات لحفظ البيانات
+const fs = require('fs');
+const path = require('path');
 
 // ==========================================
 // 1. إعدادات البوت والاتصال بالديسكورد
@@ -16,28 +17,28 @@ const client = new Client({
 });
 
 const BOT_TOKEN = process.env.BOT_TOKEN; 
-const CONFIG_FILE = './ticket_config.json'; // اسم الملف الذي سيحفظ الإعدادات للأبد
-let ticketConfig = null;
+const DATA_DIR = './guilds_data'; // مجلد لحفظ بيانات كل سيرفر بشكل مستقل
 
-// دالة لجلب الإعدادات من الملف عند تشغيل البوت
-function loadConfig() {
-    if (fs.existsSync(CONFIG_FILE)) {
+// التأكد من وجود مجلد الحفظ لعدم حدوث كراش
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR);
+}
+
+// دالة لجلب إعدادات سيرفر معين بناءً على الـ ID
+function getGuildConfig(guildId) {
+    const filePath = path.join(DATA_DIR, `${guildId}.json`);
+    if (fs.existsSync(filePath)) {
         try {
-            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            ticketConfig = JSON.parse(data);
-            console.log('[DATABASE] Saved configuration loaded successfully.');
-        } catch (error) {
-            console.error('[DATABASE] Error reading config file:', error);
-            ticketConfig = null;
+            return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } catch (e) {
+            return null;
         }
-    } else {
-        console.log('[DATABASE] No previous configuration found. Waiting for Dashboard setup.');
     }
+    return null;
 }
 
 client.once('ready', () => {
     console.log(`[BOT] Connected successfully as ${client.user.tag}`);
-    loadConfig(); // قراءة الإعدادات المحفوظة فور تشغيل البوت
 });
 
 // ==========================================
@@ -47,17 +48,31 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// واجهة الـ HTML للوحة التحكم (صفحة واحدة، منيو يسار، الخانات المطلوبة)
+// الواجهة الرئيسية لـ لوحة التحكم
 app.get('/', (req, res) => {
-    // جلب القيم الحالية المحفوظة لكي تظهر داخل الخانات تلقائياً في الموقع إذا كانت موجودة
-    const c = ticketConfig || {};
-    
+    const selectedGuildId = req.query.guildId || '';
+    let currentConfig = {};
+
+    // جلب قائمة كل السيرفرات المشترك فيها البوت حالياً
+    const guildsList = client.guilds.cache.map(g => ({ id: g.id, name: g.name }));
+
+    if (selectedGuildId) {
+        currentConfig = getGuildConfig(selectedGuildId) || {};
+    }
+
+    // بناء قائمة الخيارات البرمجية للسيرفرات (Dropdown)
+    let guildOptionsHtml = `<option value="">-- اختر السيرفر المراد التحكم به --</option>`;
+    guildsList.forEach(g => {
+        const selected = g.id === selectedGuildId ? 'selected' : '';
+        guildOptionsHtml += `<option value="${g.id}" ${selected}>${g.name}</option>`;
+    });
+
     res.send(`
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
     <head>
         <meta charset="UTF-8">
-        <title>لوحة تحكم نظام التكت</title>
+        <title>لوحة تحكم نظام التكت المتطور</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
             body { display: flex; height: 100vh; background-color: #1e1f22; color: #f2f3f5; }
@@ -71,8 +86,9 @@ app.get('/', (req, res) => {
             .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
             .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
             .form-group label { margin-bottom: 8px; font-size: 14px; color: #b5bac1; }
-            .form-group input, .form-group textarea { padding: 10px; background-color: #1e1f22; border: 1px solid #3f4147; border-radius: 4px; color: #fff; font-size: 14px; }
-            .form-group input:focus, .form-group textarea:focus { border-color: #5865f2; outline: none; }
+            .form-group input, .form-group textarea, .form-group select { padding: 10px; background-color: #1e1f22; border: 1px solid #3f4147; border-radius: 4px; color: #fff; font-size: 14px; }
+            .form-group select option { background-color: #1e1f22; }
+            .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #5865f2; outline: none; }
             button.btn-submit { width: 100%; padding: 12px; background-color: #248046; border: none; border-radius: 4px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
             button.btn-submit:hover { background-color: #1a6535; }
             .alert { padding: 10px; background-color: #248046; color: white; border-radius: 4px; margin-bottom: 15px; display: none; text-align: center; }
@@ -87,77 +103,96 @@ app.get('/', (req, res) => {
 
         <div class="main-content">
             <div class="form-container">
-                <h3>إعدادات قائمة التكت (4 خانات مخصصة)</h3>
-                <div id="successAlert" class="alert">تم حفظ الإعدادات بنجاح في قاعدة البيانات ونشر التكت!</div>
+                <h3>إعدادات قائمة التكت للسيرفرات</h3>
+                <div id="successAlert" class="alert">تم حفظ التعديلات ونشر التكت الخاص بهذا السيرفر بنجاح!</div>
                 
-                <form action="/save-config" method="POST">
+                <!-- خانة اختيار السيرفر المضاف إليه البوت -->
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="color: #5865f2; font-weight: bold; font-size: 16px;">اختر السيرفر الحالي للتعديل:</label>
+                    <select id="guildSelector" onchange="changeGuild(this.value)">
+                        ${guildOptionsHtml}
+                    </select>
+                </div>
+
+                <!-- لن يظهر النموذج المتبقي إلا إذا تم اختيار سيرفر محدد بالفعل -->
+                <form action="/save-config" method="POST" id="configForm" style="display: ${selectedGuildId ? 'block' : 'none'};">
+                    <input type="hidden" name="guildId" value="${selectedGuildId}">
                     
                     <div class="row-grid">
                         <div class="form-group">
                             <label>اسم الخيار 1 في المنيو</label>
-                            <input type="text" name="btnName1" value="${c.btnName1 || ''}" placeholder="مثال: الدعم الفني" required>
+                            <input type="text" name="btnName1" value="${currentConfig.btnName1 || ''}" placeholder="مثال: الدعم الفني" required>
                         </div>
                         <div class="form-group">
                             <label>ID إيموجي الخيار 1 (اختياري)</label>
-                            <input type="text" name="emojiId1" value="${c.emojiId1 || ''}" placeholder="مثال: 123456789012345">
+                            <input type="text" name="emojiId1" value="${currentConfig.emojiId1 || ''}" placeholder="مثال: 123456789012345">
                         </div>
                     </div>
 
                     <div class="row-grid">
                         <div class="form-group">
                             <label>اسم الخيار 2 في المنيو</label>
-                            <input type="text" name="btnName2" value="${c.btnName2 || ''}" placeholder="مثال: تقديم إدارة" required>
+                            <input type="text" name="btnName2" value="${currentConfig.btnName2 || ''}" placeholder="مثال: تقديم إدارة" required>
                         </div>
                         <div class="form-group">
                             <label>ID إيموجي الخيار 2 (اختياري)</label>
-                            <input type="text" name="emojiId2" value="${c.emojiId2 || ''}" placeholder="مثال: 123456789012345">
+                            <input type="text" name="emojiId2" value="${currentConfig.emojiId2 || ''}" placeholder="مثال: 123456789012345">
                         </div>
                     </div>
 
                     <div class="row-grid">
                         <div class="form-group">
                             <label>اسم الخيار 3 في المنيو</label>
-                            <input type="text" name="btnName3" value="${c.btnName3 || ''}" placeholder="مثال: الشكاوى والبلاغات" required>
+                            <input type="text" name="btnName3" value="${currentConfig.btnName3 || ''}" placeholder="مثال: الشكاوى والبلاغات" required>
                         </div>
                         <div class="form-group">
                             <label>ID إيموجي الخيار 3 (اختياري)</label>
-                            <input type="text" name="emojiId3" value="${c.emojiId3 || ''}" placeholder="مثال: 123456789012345">
+                            <input type="text" name="emojiId3" value="${currentConfig.emojiId3 || ''}" placeholder="مثال: 123456789012345">
                         </div>
                     </div>
 
                     <div class="row-grid">
                         <div class="form-group">
                             <label>اسم الخيار 4 في المنيو</label>
-                            <input type="text" name="btnName4" value="${c.btnName4 || ''}" placeholder="مثال: الاستفسارات العامة" required>
+                            <input type="text" name="btnName4" value="${currentConfig.btnName4 || ''}" placeholder="مثال: الاستفسارات العامة" required>
                         </div>
                         <div class="form-group">
                             <label>ID إيموجي الخيار 4 (اختياري)</label>
-                            <input type="text" name="emojiId4" value="${c.emojiId4 || ''}" placeholder="مثال: 123456789012345">
+                            <input type="text" name="emojiId4" value="${currentConfig.emojiId4 || ''}" placeholder="مثال: 123456789012345">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label>وصف رسالة التكت (Embed Description)</label>
-                        <textarea name="ticketDesc" rows="3" placeholder="اكتب هنا الوصف الذي سيظهر للأعضاء عند فتح التكت..." required>${c.ticketDesc || ''}</textarea>
+                        <textarea name="ticketDesc" rows="3" placeholder="اكتب هنا الوصف الذي سيظهر للأعضاء عند فتح التكت..." required>${currentConfig.ticketDesc || ''}</textarea>
                     </div>
 
                     <div class="row-grid">
                         <div class="form-group">
                             <label>ID الروم لإرسال التكت الرئيسي إليه</label>
-                            <input type="text" name="channelId" value="${c.channelId || ''}" placeholder="ID الروم" required>
+                            <input type="text" name="channelId" value="${currentConfig.channelId || ''}" placeholder="ID الروم" required>
                         </div>
                         <div class="form-group">
                             <label>ID رتبة الإدارة (التي تستخدم منيو التحكم فقط)</label>
-                            <input type="text" name="staffRoleId" value="${c.staffRoleId || ''}" placeholder="ID الرتبة" required>
+                            <input type="text" name="staffRoleId" value="${currentConfig.staffRoleId || ''}" placeholder="ID الرتبة" required>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-submit">حفظ الإعدادات ونشر التكت</button>
+                    <button type="submit" class="btn-submit">حفظ الإعدادات ونشر التكت في السيرفر</button>
                 </form>
             </div>
         </div>
 
         <script>
+            // دالة التحويل عند تغيير السيرفر المختار من القائمة المنسدلة
+            function changeGuild(guildId) {
+                if (guildId) {
+                    window.location.href = '/?guildId=' + guildId;
+                } else {
+                    window.location.href = '/';
+                }
+            }
+            
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('success') === 'true') {
                 document.getElementById('successAlert').style.display = 'block';
@@ -168,25 +203,27 @@ app.get('/', (req, res) => {
     `);
 });
 
-// استقبال البيانات، حفظها في ملف خارجي، ونشر التكت في الديسكورد
+// استقبال البيانات وحفظها لكل سيرفر بشكل منفصل
 app.post('/save-config', async (req, res) => {
-    ticketConfig = req.body;
+    const configData = req.body;
+    const guildId = configData.guildId;
     
     try {
-        // حفظ الإعدادات في ملف ticket_config.json بشكل دائم
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(ticketConfig, null, 4), 'utf8');
-        console.log('[DATABASE] New settings permanently saved to JSON file.');
+        // حفظ ملف الـ JSON المخصص للسيرفر الحالي فقط
+        const filePath = path.join(DATA_DIR, `${guildId}.json`);
+        fs.writeFileSync(filePath, JSON.stringify(configData, null, 4), 'utf8');
+        console.log(`[DATABASE] Configuration permanently saved for Guild ID: ${guildId}`);
 
-        const channel = await client.channels.fetch(ticketConfig.channelId);
+        const channel = await client.channels.fetch(configData.channelId);
         if (channel) {
             const options = [];
             for (let i = 1; i <= 4; i++) {
                 const optionData = {
-                    label: ticketConfig[`btnName${i}`],
-                    value: `ticket_type_${i}`
+                    label: configData[`btnName${i}`],
+                    value: `ticket_type_${i}_${guildId}` // دمج الـ guildId لضمان دقة التنفيذ البرمجي
                 };
-                if (ticketConfig[`emojiId${i}`]) {
-                    optionData.emoji = { id: ticketConfig[`emojiId${i}`] };
+                if (configData[`emojiId${i}`]) {
+                    optionData.emoji = { id: configData[`emojiId${i}`] };
                 }
                 options.push(optionData);
             }
@@ -198,35 +235,41 @@ app.post('/save-config', async (req, res) => {
 
             const row = new ActionRowBuilder().addComponents(menu);
             const embed = new EmbedBuilder()
-                .setDescription(ticketConfig.ticketDesc)
+                .setDescription(configData.ticketDesc)
                 .setColor('#5865f2');
 
             await channel.send({ embeds: [embed], components: [row] });
         }
-        res.redirect('/?success=true');
+        res.redirect(`/?guildId=${guildId}&success=true`);
     } catch (error) {
         console.error(error);
-        res.status(500).send("حدث خطأ أثناء الاتصال بالديسكورد، تأكد من الـ IDs والإعدادات.");
+        res.status(500).send("حدث خطأ في الديسكورد، تأكد من صحة الـ IDs والرومات في هذا السيرفر.");
     }
 });
 
 app.listen(3000, () => {
-    console.log('[DASHBOARD] Web panel running on http://localhost:3000');
+    console.log('[DASHBOARD] Multi-Guild web panel running on http://localhost:3000');
 });
 
 // ==========================================
 // 3. معالجة تفاعلات البوت داخل ديسكورد (Discord Interaction)
 // ==========================================
 client.on('interactionCreate', async (interaction) => {
-    // إذا لم تكن هناك إعدادات محملة في الذاكرة أو في الملف، يتجاهل الأمر لمنع كراش البوت
-    if (!ticketConfig) return;
+    const guildId = interaction.guild?.id;
+    if (!guildId) return;
 
+    // جلب إعدادات هذا السيرفر بالتحديد من الملف الخاص به
+    const currentConfig = getGuildConfig(guildId);
+    if (!currentConfig) return;
+
+    // أولاً: فتح تكت جديدة للأعضاء
     if (interaction.isStringSelectMenu() && interaction.customId === 'open_ticket_menu') {
         await interaction.deferReply({ ephemeral: true });
 
         const chosenValue = interaction.values[0]; 
-        const index = chosenValue.split('_')[2]; // تعديل بسيط لجلب الرقم الصحيح من المصفوفة بدقة v14
-        const ticketName = ticketConfig[`btnName${index}`];
+        const parts = chosenValue.split('_');
+        const index = parts[2]; // الحصول على الترتيب البرمجي الصحيح
+        const ticketName = currentConfig[`btnName${index}`];
 
         const guild = interaction.guild;
         const ticketChannel = await guild.channels.create({
@@ -242,7 +285,7 @@ client.on('interactionCreate', async (interaction) => {
                     allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
                 },
                 {
-                    id: ticketConfig.staffRoleId,
+                    id: currentConfig.staffRoleId,
                     allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
                 }
             ],
@@ -264,13 +307,14 @@ client.on('interactionCreate', async (interaction) => {
             .setDescription(`مرحبا بك في قسم: ${ticketName}\nيرجى طرح مشكلتك هنا وسيقوم فريق الدعم بالرد عليك قريباً.\n\nهذه القائمة مخصصة لطاقم العمل فقط لإدارة التكت والاستجابة المباشرة.`)
             .setColor('#2f3136');
 
-        await ticketChannel.send({ content: `${interaction.user} | <@&${ticketConfig.staffRoleId}>`, embeds: [startEmbed], components: [row] });
+        await ticketChannel.send({ content: `${interaction.user} | <@&${currentConfig.staffRoleId}>`, embeds: [startEmbed], components: [row] });
         await interaction.editReply({ content: `تم فتح التكت الخاص بك بنجاح: ${ticketChannel}`, ephemeral: true });
     }
 
+    // ثانياً: منيو التحكم الداخلي الخاص بالإدارة
     if (interaction.isStringSelectMenu() && interaction.customId === 'admin_control_menu') {
-        if (!interaction.member.roles.cache.has(ticketConfig.staffRoleId)) {
-            return interaction.reply({ content: 'عذراً، هذا المنيو مخصص فقط لأعضاء الإدارة المعتمدين.', ephemeral: true });
+        if (!interaction.member.roles.cache.has(currentConfig.staffRoleId)) {
+            return interaction.reply({ content: 'عذراً، هذا المنيو مخصص فقط لأعضاء الإدارة المعتمدين في هذا السيرفر.', ephemeral: true });
         }
 
         const action = interaction.values[0];
@@ -279,7 +323,7 @@ client.on('interactionCreate', async (interaction) => {
         const membersInChannel = channel.permissionOverwrites.cache;
         let targetMemberId = null;
         for (const [id, overwrite] of membersInChannel) {
-            if (id !== interaction.guild.id && id !== ticketConfig.staffRoleId && id !== client.user.id) {
+            if (id !== interaction.guild.id && id !== currentConfig.staffRoleId && id !== client.user.id) {
                 targetMemberId = id;
                 break;
             }
@@ -287,7 +331,7 @@ client.on('interactionCreate', async (interaction) => {
 
         switch (action) {
             case 'claim_ticket':
-                await channel.permissionOverwrites.edit(ticketConfig.staffRoleId, { SendMessages: false });
+                await channel.permissionOverwrites.edit(currentConfig.staffRoleId, { SendMessages: false });
                 await channel.permissionOverwrites.edit(interaction.user.id, { SendMessages: true, ViewChannel: true });
                 await interaction.reply({ content: `تم استلام التكت بواسطة: ${interaction.user}. بقية الإداريين لا يمكنهم الإرسال الآن.` });
                 break;
