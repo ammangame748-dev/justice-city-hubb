@@ -2,24 +2,21 @@ require('dotenv').config();
 
 const {
     Client,
-    GatewayIntentBits,
-    ActionRowBuilder,
-    StringSelectMenuBuilder,
-    EmbedBuilder,
-    PermissionsBitField,
-    ChannelType
+    GatewayIntentBits
 } = require('discord.js');
 
 const express = require('express');
 const session = require('express-session');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// إذا Node أقل من 18 استخدم node-fetch
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(session({
     secret: 'justice_city_secret',
@@ -27,11 +24,10 @@ app.use(session({
     saveUninitialized: false
 }));
 
+// ===== Discord Bot =====
 const client = new Client({
     intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.Guilds
     ]
 });
 
@@ -40,62 +36,47 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 
-const DATA_DIR = './guilds_data';
-
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
-}
-
-function getGuildConfig(guildId) {
-    const filePath = path.join(DATA_DIR, `${guildId}.json`);
-
-    if (!fs.existsSync(filePath)) return {};
-
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
-
-function saveGuildConfig(guildId, data) {
-    const filePath = path.join(DATA_DIR, `${guildId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
-}
-
+// ===== Login Bot =====
 client.once('ready', () => {
     console.log(`${client.user.tag} Ready`);
 });
 
+client.login(BOT_TOKEN);
+
+// ===== OAuth Login =====
 app.get('/login', (req, res) => {
-
     const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify%20guilds`;
-
-res.redirect(url);
+    res.redirect(url);
 });
 
+// ===== Callback (المهم) =====
 app.get('/callback', async (req, res) => {
-
     const code = req.query.code;
-
     if (!code) return res.send('No Code');
 
     try {
-
-        const params = new URLSearchParams();
-
-        params.append('client_id', CLIENT_ID);
-        params.append('client_secret', CLIENT_SECRET);
-        params.append('grant_type', 'authorization_code');
-        params.append('code', code);
-        params.append('redirect_uri', REDIRECT_URI);
-
-        const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        // 1. تحويل الكود إلى توكن
+        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
             method: 'POST',
-            body: params,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
-            }
+            },
+            body: new URLSearchParams({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: REDIRECT_URI
+            })
         });
 
-        const tokenData = await tokenRes.json();
+        const tokenData = await tokenResponse.json();
+        if (!tokenData.access_token) {
+            console.log(tokenData);
+            return res.send('OAuth Token Error');
+        }
 
+        // 2. جلب بيانات المستخدم
         const userRes = await fetch('https://discord.com/api/users/@me', {
             headers: {
                 Authorization: `Bearer ${tokenData.access_token}`
@@ -104,6 +85,7 @@ app.get('/callback', async (req, res) => {
 
         const user = await userRes.json();
 
+        // 3. جلب السيرفرات
         const guildRes = await fetch('https://discord.com/api/users/@me/guilds', {
             headers: {
                 Authorization: `Bearer ${tokenData.access_token}`
@@ -112,16 +94,23 @@ app.get('/callback', async (req, res) => {
 
         const guilds = await guildRes.json();
 
+        if (!Array.isArray(guilds)) {
+            return res.send('Guild fetch error');
+        }
+
+        // 4. فلترة الأدمن
         const adminGuilds = guilds.filter(g =>
-            (g.permissions & 0x8) === 0x8
+            (Number(g.permissions) & 0x8) === 0x8
         );
 
+        // 5. السيرفرات اللي فيها البوت
         const botGuilds = client.guilds.cache.map(g => g.id);
 
         const mutualGuilds = adminGuilds.filter(g =>
             botGuilds.includes(g.id)
         );
 
+        // 6. Session
         req.session.user = user;
         req.session.guilds = mutualGuilds;
 
@@ -132,6 +121,8 @@ app.get('/callback', async (req, res) => {
         res.send('OAuth Error');
     }
 });
+
+
 
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
