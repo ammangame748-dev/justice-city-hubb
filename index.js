@@ -404,43 +404,55 @@ app.post('/save-config', async (req, res) => {
 
     const data = req.body;
 
+    // حفظ البيانات في الملف أولاً
     saveGuildConfig(data.guildId, data);
 
     try {
-
         const channel = await client.channels.fetch(data.channelId);
+
+        // 1. بناء مصفوفة الخيارات وتصفيتها (إضافة الخيارات المملوءة فقط وتجنب الفارغ)
+        const options = [];
+        
+        if (data.btn1 && data.btn1.trim() !== '') options.push({ label: data.btn1.trim(), value: '1' });
+        if (data.btn2 && data.btn2.trim() !== '') options.push({ label: data.btn2.trim(), value: '2' });
+        if (data.btn3 && data.btn3.trim() !== '') options.push({ label: data.btn3.trim(), value: '3' });
+        if (data.btn4 && data.btn4.trim() !== '') options.push({ label: data.btn4.trim(), value: '4' });
+
+        // إذا كانت جميع الخيارات فارغة، نضع خياراً افتراضياً لمنع حدوث خطأ من ديسكورد
+        if (options.length === 0) {
+            options.push({ label: 'تذكرة عامة', value: 'default' });
+        }
 
         const menu = new StringSelectMenuBuilder()
             .setCustomId('ticket_menu')
             .setPlaceholder('اختر القسم')
-            .addOptions([
-                {
-                    label: data.btn1,
-                    value: '1'
-                },
-                {
-                    label: data.btn2,
-                    value: '2'
-                },
-                {
-                    label: data.btn3,
-                    value: '3'
-                },
-                {
-                    label: data.btn4,
-                    value: '4'
-                }
-            ]);
+            .addOptions(options); // تمرير المصفوفة النظيفة
 
         const row = new ActionRowBuilder()
             .addComponents(menu);
 
+        // 2. بناء الـ Embed والتحقق من الصور قبل وضعها
         const embed = new EmbedBuilder()
-            .setColor('#5865f2')
-            .setDescription(data.desc)
-            .setImage(data.banner)
-            .setThumbnail(data.thumbnail);
+            .setColor('#5865f2');
 
+        // التحقق من وجود وصف (ديسكورد لا يقبل إيمبد فارغ تماماً)
+        if (data.desc && data.desc.trim() !== '') {
+            embed.setDescription(data.desc);
+        } else {
+            embed.setDescription('اضغط على القائمة في الأسفل لفتح تذكرة');
+        }
+
+        // التحقق من صحة رابط البانر (الصورة الكبيرة) قبل تفعيله
+        if (data.banner && data.banner.startsWith('http')) {
+            embed.setImage(data.banner.trim());
+        }
+
+        // التحقق من صحة رابط الـ Thumbnail (الصورة الصغيرة) قبل تفعيله
+        if (data.thumbnail && data.thumbnail.startsWith('http')) {
+            embed.setThumbnail(data.thumbnail.trim());
+        }
+
+        // إرسال الرسالة إلى الروم المعني
         await channel.send({
             embeds: [embed],
             components: [row]
@@ -449,11 +461,11 @@ app.post('/save-config', async (req, res) => {
         res.redirect('/?guildId=' + data.guildId);
 
     } catch (err) {
-
-        console.log(err);
-        res.send('Error');
+        console.error("حدث خطأ أثناء إرسال التكت:", err);
+        res.send('خطأ في إرسال البيانات للديسكورد: ' + err.message);
     }
 });
+
 
 client.on('interactionCreate', async interaction => {
 
