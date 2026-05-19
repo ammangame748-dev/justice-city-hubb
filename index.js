@@ -71,7 +71,7 @@ client.once('ready', () => {
 
 // ===== OAuth Login =====
 app.get('/login', (req, res) => {
-    const url = `https://discord.com{CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify%20guilds`;
+    const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify%20guilds`;
     res.redirect(url);
 });
 
