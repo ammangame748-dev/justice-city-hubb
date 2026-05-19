@@ -65,9 +65,9 @@ client.once('ready', () => {
 
 app.get('/login', (req, res) => {
 
-    const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify guilds`;
+    const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify%20guilds`;
 
-    res.redirect(url);
+res.redirect(url);
 });
 
 app.get('/callback', async (req, res) => {
@@ -519,8 +519,10 @@ client.on('interactionCreate', async interaction => {
 
 });
 
-app.listen(3000, () => {
-    console.log('Dashboard Running');
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Dashboard Running On ${PORT}`);
 });
 
 client.login(BOT_TOKEN);
