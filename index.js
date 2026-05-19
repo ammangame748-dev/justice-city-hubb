@@ -55,8 +55,8 @@ app.get('/callback', async (req, res) => {
     if (!code) return res.send('No Code');
 
     try {
-        // 1. تحويل الكود إلى توكن
-        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+          // 1. تحويل الكود إلى توكن
+        const tokenResponse = await fetch('https://discord.com', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -67,7 +67,7 @@ app.get('/callback', async (req, res) => {
                 grant_type: 'authorization_code',
                 code: code,
                 redirect_uri: REDIRECT_URI
-            })
+            }).toString() // <-- أضف .toString() هنا لضمان تحويلها لنص مُشفر بالشكل الصحيح
         });
 
         const tokenData = await tokenResponse.json();
