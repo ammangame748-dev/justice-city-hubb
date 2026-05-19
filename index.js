@@ -124,18 +124,15 @@ app.get('/callback', async (req, res) => {
         const guilds = await guildRes.json();
         if (!Array.isArray(guilds)) return res.send('Guild Error');
 
-        // فلترة السيرفرات التي يمتلك فيها المستخدم صلاحية الأدمن (0x8)
-        const adminGuilds = guilds.filter(g => (Number(g.permissions) & 0x8) === 0x8);
+        // السيرفرات المشتركة مع البوت فقط (بدون تعقيد permissions)
+const botGuilds = client.guilds.cache.map(g => g.id);
 
-        // ربطها بكاش البوت لضمان ظهور السيرفرات المشتركة فقط
-        const botGuilds = client.guilds.cache.map(g => g.id);
-        const mutualGuilds = adminGuilds.filter(g => botGuilds.includes(g.id));
+const mutualGuilds = guilds.filter(g => botGuilds.includes(g.id));
 
-        req.session.user = user;
-        req.session.guilds = mutualGuilds;
+req.session.user = user;
+req.session.guilds = mutualGuilds;
 
-        res.redirect('/');
-
+res.redirect('/');
     } catch (err) {
         console.log(err);
         res.send('OAuth Error');
