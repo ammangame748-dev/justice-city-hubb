@@ -80,11 +80,11 @@ function checkGuildAccess(req, res, next) {
 // =====================================================
 app.get('/login', (req, res) => {
     const url =
-        `https://discord.com` +
-        `?client_id=${CLIENT_ID}` +
-        `&response_type=code` +
-        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-        `&scope=identify%20guilds`;
+    `https://discord.com/oauth2/authorize` +
+    `?client_id=${CLIENT_ID}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&scope=identify%20guilds`;
 
     res.redirect(url);
 });
@@ -97,7 +97,7 @@ app.get('/callback', async (req, res) => {
     if (!code) return res.send('No Code');
 
     try {
-        const tokenRes = await fetch('https://discord.com', {
+        const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -112,12 +112,12 @@ app.get('/callback', async (req, res) => {
         const tokenData = await tokenRes.json();
         if (!tokenData.access_token) return res.send('Token Error');
 
-        const userRes = await fetch('https://discord.com', {
+        const userRes = await fetch('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` }
         });
         const user = await userRes.json();
 
-        const guildRes = await fetch('https://discord.com/guilds', {
+        const guildRes = await fetch('https://discord.com/api/users/@me/guilds', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` }
         });
 
@@ -154,7 +154,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     // بناء كروت السيرفرات بشكل جميل
     let guildCards = '';
     guilds.forEach(g => {
-        const iconUrl = g.icon ? `https://discordapp.com{g.id}/${g.icon}.png` : 'https://discordapp.com';
+        const iconUrl = g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png';
         const isSelected = guildId === g.id ? 'border: 2px solid #5865F2; transform: scale(1.03);' : '';
         
         guildCards += `
@@ -276,7 +276,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     <div class="navbar">
         <h2>Dashboard Panel</h2>
         <div class="user-profile">
-            <img class="user-avatar" src="${req.session.user.avatar ? `https://discordapp.com{req.session.user.id}/${req.session.user.avatar}.png` : 'https://discordapp.com'}" alt="avatar">
+            <img class="user-avatar" src="${req.session.user.avatar ? `https://cdn.discordapp.com/avatars/${req.session.user.id}/${req.session.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="avatar">
             <span>${req.session.user.username}</span>
         </div>
     </div>
