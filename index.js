@@ -13,7 +13,6 @@ const {
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
-const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
@@ -443,13 +442,13 @@ app.post('/save-config', async (req, res) => {
             .setThumbnail(data.thumbnail);
 
         await channel.send({
-            embeds:[embed],
-            components:[row]
+            embeds: [embed],
+            components: [row]
         });
 
         res.redirect('/?guildId=' + data.guildId);
 
-    } catch(err){
+    } catch (err) {
 
         console.log(err);
         res.send('Error');
@@ -466,28 +465,28 @@ client.on('interactionCreate', async interaction => {
 
     const ticket = await interaction.guild.channels.create({
 
-        name:`ticket-${interaction.user.username}`,
+        name: `ticket-${interaction.user.username}`,
 
-        type:ChannelType.GuildText,
+        type: ChannelType.GuildText,
 
-        permissionOverwrites:[
+        permissionOverwrites: [
 
             {
-                id:interaction.guild.id,
-                deny:[PermissionsBitField.Flags.ViewChannel]
+                id: interaction.guild.id,
+                deny: [PermissionsBitField.Flags.ViewChannel]
             },
 
             {
-                id:interaction.user.id,
-                allow:[
+                id: interaction.user.id,
+                allow: [
                     PermissionsBitField.Flags.ViewChannel,
                     PermissionsBitField.Flags.SendMessages
                 ]
             },
 
             {
-                id:config.staffRoleId,
-                allow:[
+                id: config.staffRoleId,
+                allow: [
                     PermissionsBitField.Flags.ViewChannel,
                     PermissionsBitField.Flags.SendMessages
                 ]
@@ -509,13 +508,13 @@ client.on('interactionCreate', async interaction => {
         .setThumbnail(config.thumbnail);
 
     await ticket.send({
-        content:`${interaction.user} <@&${config.staffRoleId}>`,
-        embeds:[embed]
+        content: `${interaction.user} <@&${config.staffRoleId}>`,
+        embeds: [embed]
     });
 
     await interaction.reply({
-        content:`تم فتح التكت ${ticket}`,
-        ephemeral:true
+        content: `تم فتح التكت ${ticket}`,
+        ephemeral: true
     });
 
 });
