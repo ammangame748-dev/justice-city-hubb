@@ -70,13 +70,12 @@ function checkGuildAccess(req, res, next) {
     if (!hasAccess) return res.status(403).send('❌ خطأ أمني: لا تملك صلاحية الوصول لهذا السيرفر.');
     next();
 }
-
 // =====================================================
 // نظام تسجيل الدخول (OAuth2)
 // =====================================================
 app.get('/login', (req, res) => {
     const url =
-    `https://discord.com` +
+    `https://discord.com/api/oauth2/authorize` +
     `?client_id=${CLIENT_ID}` +
     `&response_type=code` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -90,9 +89,11 @@ app.get('/callback', async (req, res) => {
     if (!code) return res.send('No Code Provided');
 
     try {
-        const tokenRes = await fetch('https://discord.com', {
+        const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
             body: new URLSearchParams({
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
@@ -103,41 +104,59 @@ app.get('/callback', async (req, res) => {
         });
 
         const tokenData = await tokenRes.json();
-        if (!tokenData.access_token) return res.send('Token Error');
 
-        const userRes = await fetch('https://discord.com', {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        if (!tokenData.access_token) {
+            console.log(tokenData);
+            return res.send('Token Error');
+        }
+
+        const userRes = await fetch('https://discord.com/api/users/@me', {
+            headers: {
+                Authorization: `Bearer ${tokenData.access_token}`
+            }
         });
+
         const user = await userRes.json();
 
-        const guildRes = await fetch('https://discord.com/guilds', {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        const guildRes = await fetch('https://discord.com/api/users/@me/guilds', {
+            headers: {
+                Authorization: `Bearer ${tokenData.access_token}`
+            }
         });
 
         const guilds = await guildRes.json();
-        if (!Array.isArray(guilds)) return res.send('Guild Error');
 
-        // التصفية الرقمية الصحيحة والآمنة باستخدام الـ BigInt لصلاحية الـ Administrator (0x8)
+        if (!Array.isArray(guilds)) {
+            console.log(guilds);
+            return res.send('Guild Error');
+        }
+
+        // فلترة السيرفرات يلي عنده فيها صلاحية أدمن
         const adminGuilds = guilds.filter(g => {
             const isOwner = g.owner === true;
-            const userPermissions = BigInt(g.permissions || 0);
-            const isAdmin = (userPermissions & 0x8n) === 0x8n;
+            const permissions = BigInt(g.permissions || 0);
+            const isAdmin = (permissions & 0x8n) === 0x8n;
+
             return isOwner || isAdmin;
         });
 
+        // السيرفرات المشتركة مع البوت
         const botGuildIds = client.guilds.cache.map(g => g.id);
-        const finalMutualGuilds = adminGuilds.filter(g => botGuildIds.includes(g.id));
+
+        const finalMutualGuilds = adminGuilds.filter(g =>
+            botGuildIds.includes(g.id)
+        );
 
         req.session.user = user;
         req.session.guilds = finalMutualGuilds;
 
         res.redirect('/');
+
     } catch (err) {
         console.error(err);
         res.send('OAuth Error');
     }
 });
-
 // =====================================================
 // لوحة التحكم بتصميم خرافي وناري وجديد كلياً
 // =====================================================
@@ -148,10 +167,17 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     const selectedGuild = guilds.find(g => g.id === guildId);
 
     let guildCards = '';
+
     guilds.forEach(g => {
-        const iconUrl = g.icon ? `https://discordapp.com{g.id}/${g.icon}.png` : 'https://discordapp.com';
-        const isSelected = guildId === g.id ? 'border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; transform: scale(1.05);' : '';
-        
+
+        const iconUrl = g.icon
+        ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png`
+        : 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+        const isSelected = guildId === g.id
+        ? 'border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; transform: scale(1.05);'
+        : '';
+
         guildCards += `
             <div class="guild-card" style="${isSelected}" onclick="window.location.href='/?guildId=${g.id}'">
                 <img src="${iconUrl}" alt="${g.name}">
@@ -311,7 +337,11 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     <div class="navbar">
         <h2>🔥 NEON DASHBOARD</h2>
         <div class="user-profile">
-            <img class="user-avatar" src="${req.session.user.avatar ? `https://discordapp.com{req.session.user.id}/${req.session.user.avatar}.png` : 'https://discordapp.com'}" alt="avatar">
+            <img class="user-avatar" src="${
+req.session.user.avatar
+? `https://cdn.discordapp.com/avatars/${req.session.user.id}/${req.session.user.avatar}.png`
+: 'https://cdn.discordapp.com/embed/avatars/0.png'
+}" alt="avatar">
             <span>${req.session.user.username}</span>
         </div>
     </div>
