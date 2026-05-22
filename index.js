@@ -17,11 +17,10 @@ const path = require('path');
 
 const app = express();
 
-// ===== Config folder =====
+// ===== مجلد حفظ البيانات =====
 const configsDir = path.join(__dirname, 'configs');
 if (!fs.existsSync(configsDir)) fs.mkdirSync(configsDir);
 
-// ===== Save / Load =====
 function saveGuildConfig(guildId, data) {
     fs.writeFileSync(path.join(configsDir, `${guildId}.json`), JSON.stringify(data, null, 2));
 }
@@ -32,34 +31,31 @@ function getGuildConfig(guildId) {
     return JSON.parse(fs.readFileSync(file));
 }
 
-// ===== Express setup =====
+// ===== إعدادات الخادم والعمليات =====
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: 'discord_dashboard_secret',
+    secret: 'discord_dashboard_secret_neon_generation',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 600000 * 60 }
 }));
 
-// ===== Discord Client =====
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-// ===== ENV =====
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 
-// ===== Ready =====
 client.once('ready', () => {
-    console.log(`${client.user.tag} is Ready`);
+    console.log(`[🤖] ${client.user.tag} جاهز للعمل والتحكم باللوحة!`);
 });
 
-// ===== Middlewares للأمان =====
+// ===== جدران الحماية والأمان =====
 function checkAuth(req, res, next) {
     if (!req.session.user) return res.redirect('/login');
     next();
@@ -71,16 +67,16 @@ function checkGuildAccess(req, res, next) {
     
     const guilds = req.session.guilds || [];
     const hasAccess = guilds.some(g => g.id === guildId);
-    if (!hasAccess) return res.status(403).send('لا تملك صلاحية الوصول لهذا السيرفر.');
+    if (!hasAccess) return res.status(403).send('❌ خطأ أمني: لا تملك صلاحية الوصول لهذا السيرفر.');
     next();
 }
 
 // =====================================================
-// LOGIN (روابط تسجيل الدخول كما هي)
+// نظام تسجيل الدخول (OAuth2)
 // =====================================================
 app.get('/login', (req, res) => {
     const url =
-    `https://discord.com/oauth2/authorize` +
+    `https://discord.com` +
     `?client_id=${CLIENT_ID}` +
     `&response_type=code` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -89,18 +85,12 @@ app.get('/login', (req, res) => {
     res.redirect(url);
 });
 
-// =====================================================
-// CALLBACK (تعديل طفيف لضمان دقة جلب سيرفرات الأدمن)
-// =====================================================
-// =====================================================
-// CALLBACK (تم التحديث لضمان جلب السيرفرات بدقة عبر الصلاحيات)
-// =====================================================
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
-    if (!code) return res.send('No Code');
+    if (!code) return res.send('No Code Provided');
 
     try {
-        const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        const tokenRes = await fetch('https://discord.com', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -115,35 +105,26 @@ app.get('/callback', async (req, res) => {
         const tokenData = await tokenRes.json();
         if (!tokenData.access_token) return res.send('Token Error');
 
-        const userRes = await fetch('https://discord.com/api/users/@me', {
+        const userRes = await fetch('https://discord.com', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` }
         });
         const user = await userRes.json();
 
-        const guildRes = await fetch('https://discord.com/api/users/@me/guilds', {
+        const guildRes = await fetch('https://discord.com/guilds', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` }
         });
 
         const guilds = await guildRes.json();
         if (!Array.isArray(guilds)) return res.send('Guild Error');
 
-        // جلب السيرفرات التي يمتلك فيها المستخدم صلاحية ADMINISTRATOR (0x8)
-        // أو يكون هو مالك السيرفر (Owner)
-        // جلب السيرفرات التي يمتلك فيها المستخدم صلاحية ADMINISTRATOR بشكل صحيح وآمن
-const adminGuilds = guilds.filter(g => {
-    const isOwner = g.owner === true;
-    
-    // تحويل النص القادم من ديسكورد إلى BigInt بأمان
-    const userPermissions = BigInt(g.permissions || 0);
-    
-    // رقم صلاحية الـ Administrator في ديسكورد هو 8 (0x8)
-    const isAdmin = (userPermissions & 0x8n) === 0x8n;
-    
-    return isOwner || isAdmin;
-});
+        // التصفية الرقمية الصحيحة والآمنة باستخدام الـ BigInt لصلاحية الـ Administrator (0x8)
+        const adminGuilds = guilds.filter(g => {
+            const isOwner = g.owner === true;
+            const userPermissions = BigInt(g.permissions || 0);
+            const isAdmin = (userPermissions & 0x8n) === 0x8n;
+            return isOwner || isAdmin;
+        });
 
-
-        // تصفية السيرفرات الإدارية لتشمل فقط السيرفرات المشتركة المتواجد فيها البوت حالياً
         const botGuildIds = client.guilds.cache.map(g => g.id);
         const finalMutualGuilds = adminGuilds.filter(g => botGuildIds.includes(g.id));
 
@@ -157,9 +138,8 @@ const adminGuilds = guilds.filter(g => {
     }
 });
 
-
 // =====================================================
-// DASHBOARD (تصميم خارق وجديد كلياً بنظام كروت السيرفرات)
+// لوحة التحكم بتصميم خرافي وناري وجديد كلياً
 // =====================================================
 app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     const guildId = req.query.guildId || '';
@@ -167,11 +147,10 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     const config = guildId ? getGuildConfig(guildId) : {};
     const selectedGuild = guilds.find(g => g.id === guildId);
 
-    // بناء كروت السيرفرات بشكل جميل
     let guildCards = '';
     guilds.forEach(g => {
-        const iconUrl = g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png';
-        const isSelected = guildId === g.id ? 'border: 2px solid #5865F2; transform: scale(1.03);' : '';
+        const iconUrl = g.icon ? `https://discordapp.com{g.id}/${g.icon}.png` : 'https://discordapp.com';
+        const isSelected = guildId === g.id ? 'border: 2px solid #00ffcc; box-shadow: 0 0 20px #00ffcc; transform: scale(1.05);' : '';
         
         guildCards += `
             <div class="guild-card" style="${isSelected}" onclick="window.location.href='/?guildId=${g.id}'">
@@ -187,151 +166,235 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>لوحة تحكم البوت الاحترافية</title>
+        <title>لوحة التحكم النيون الاحترافية</title>
         <style>
             :root {
-                --bg-primary: #1e1f22;
-                --bg-secondary: #2b2d31;
-                --bg-tertiary: #313338;
-                --accent-color: #5865F2;
-                --accent-hover: #4752c4;
-                --text-color: #f2f3f5;
-                --text-muted: #949ba4;
+                --bg-main: #0a0b0d;
+                --bg-card: #13151a;
+                --bg-input: #1b1e24;
+                --neon-cyan: #00ffcc;
+                --neon-purple: #9d4edd;
+                --text-main: #ffffff;
+                --text-muted: #6c757d;
             }
             body {
-                background-color: var(--bg-primary);
-                color: var(--text-color);
+                background-color: var(--bg-main);
+                color: var(--text-main);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 margin: 0;
                 padding: 0;
+                background-image: radial-gradient(circle at 50% 10%, #1a1525 0%, var(--bg-main) 70%);
+                background-attachment: fixed;
             }
             .navbar {
-                background-color: var(--bg-secondary);
-                padding: 15px 30px;
+                background: rgba(19, 21, 26, 0.8);
+                backdrop-filter: blur(12px);
+                border-b: 1px solid rgba(255,255,255,0.05);
+                padding: 15px 40px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 30px rgba(0,0,0,0.5);
             }
-            .navbar h2 { margin: 0; font-size: 22px; color: var(--accent-color); }
-            .user-profile { display: flex; align-items: center; gap: 10px; }
-            .user-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent-color); }
+            .navbar h2 { 
+                margin: 0; 
+                font-size: 24px; 
+                font-weight: 900;
+                background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 0 30px rgba(0,255,204,0.3);
+            }
+            .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+            .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--neon-purple); box-shadow: 0 0 10px rgba(157,78,221,0.5); }
             
-            .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+            .container { max-width: 1200px; margin: 50px auto; padding: 0 20px; }
             
-            .section-title { font-size: 20px; margin-bottom: 20px; border-right: 4px solid var(--accent-color); padding-right: 10px; }
+            .section-title { 
+                font-size: 22px; 
+                font-weight: bold;
+                margin-bottom: 25px; 
+                border-right: 5px solid var(--neon-cyan); 
+                padding-right: 15px;
+                text-shadow: 0 0 15px rgba(0,255,204,0.2);
+            }
             
             .guilds-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                gap: 20px;
-                margin-bottom: 40px;
+                grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+                gap: 25px;
+                margin-bottom: 50px;
             }
             .guild-card {
-                background-color: var(--bg-secondary);
-                padding: 20px;
-                border-radius: 12px;
+                background-color: var(--bg-card);
+                padding: 25px 20px;
+                border-radius: 16px;
                 text-align: center;
                 cursor: pointer;
-                transition: all 0.3s ease;
-                border: 2px solid transparent;
+                transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+                border: 1px solid rgba(255,255,255,0.03);
             }
             .guild-card:hover {
-                transform: translateY(-5px);
-                background-color: var(--bg-tertiary);
-                border-color: var(--text-muted);
+                transform: translateY(-8px);
+                background: #181b22;
+                border-color: var(--neon-purple);
+                box-shadow: 0 10px 25px rgba(157,78,221,0.25);
             }
-            .guild-card img { width: 70px; height: 70px; border-radius: 50%; margin-bottom: 12px; object-fit: cover; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-            .guild-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .guild-card img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+            .guild-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
             .settings-form {
-                background-color: var(--bg-secondary);
-                padding: 30px;
-                border-radius: 16px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-                max-width: 600px;
+                background-color: var(--bg-card);
+                padding: 40px;
+                border-radius: 24px;
+                border: 1px solid rgba(255,255,255,0.05);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                max-width: 750px;
                 margin: 0 auto;
-                animation: fadeIn 0.5s ease;
+                animation: fadeIn 0.6s ease;
             }
-            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
             
-            .form-group { margin-bottom: 20px; }
-            .form-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-muted); }
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                background: rgba(255,255,255,0.01);
+                padding: 20px;
+                border-radius: 14px;
+                border: 1px solid rgba(255,255,255,0.02);
+                margin-bottom: 25px;
+            }
+            .form-grid-title { grid-column: span 2; font-weight: bold; color: var(--neon-cyan); font-size: 15px; margin-bottom: -5px; }
+
+            .form-group { margin-bottom: 25px; }
+            .form-group.full-width { grid-column: span 2; margin-bottom: 5px; }
+            .form-group label { display: block; margin-bottom: 10px; font-size: 14px; color: #a4a9b3; font-weight: 600; }
             .form-group input {
                 width: 100%;
-                padding: 12px;
-                background-color: var(--bg-primary);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 8px;
+                padding: 14px;
+                background-color: var(--bg-input);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 10px;
                 color: #fff;
                 box-sizing: border-box;
                 font-size: 15px;
-                transition: border-color 0.3s;
+                transition: all 0.3s;
             }
-            .form-group input:focus { border-color: var(--accent-color); outline: none; }
+            .form-group input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0,255,204,0.3); outline: none; }
             
             .submit-btn {
-                background-color: var(--accent-color);
+                background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
                 color: white;
                 border: none;
-                padding: 14px 20px;
-                border-radius: 8px;
+                padding: 16px 25px;
+                border-radius: 12px;
                 cursor: pointer;
-                font-size: 16px;
-                font-weight: bold;
+                font-size: 18px;
+                font-weight: 800;
                 width: 100%;
-                transition: background 0.2s;
+                transition: all 0.3s;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 15px rgba(0,255,204,0.2);
             }
-            .submit-btn:hover { background-color: var(--accent-hover); }
+            .submit-btn:hover { 
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(157,78,221,0.4);
+                filter: brightness(1.1);
+            }
             
-            .no-guild-msg { text-align: center; color: var(--text-muted); padding: 40px; font-size: 16px; background: var(--bg-secondary); border-radius: 12px; }
+            .no-guild-msg { text-align: center; color: var(--text-muted); padding: 50px; font-size: 16px; background: var(--bg-card); border-radius: 16px; border: 1px solid rgba(255,255,255,0.02); }
         </style>
     </head>
     <body>
 
     <div class="navbar">
-        <h2>Dashboard Panel</h2>
+        <h2>🔥 NEON DASHBOARD</h2>
         <div class="user-profile">
-            <img class="user-avatar" src="${req.session.user.avatar ? `https://cdn.discordapp.com/avatars/${req.session.user.id}/${req.session.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="avatar">
+            <img class="user-avatar" src="${req.session.user.avatar ? `https://discordapp.com{req.session.user.id}/${req.session.user.avatar}.png` : 'https://discordapp.com'}" alt="avatar">
             <span>${req.session.user.username}</span>
         </div>
     </div>
 
     <div class="container">
-        <div class="section-title">اختر السيرفر المراد تعديله (سيرفرات الإدارة فقط):</div>
+        <div class="section-title">اختر السيرفر المراد تعديله:</div>
         <div class="guilds-grid">
-            ${guildCards || '<p class="no-guild-msg">لا توجد سيرفرات مشتركة متوفرة لديك فيها صلاحيات الإدارة.</p>'}
+            ${guildCards || '<p class="no-guild-msg">لا توجد سيرفرات مشتركة متوفرة متواجد بها البوت حالياً ولها صلاحية إدارة.</p>'}
         </div>
 
         ${guildId && selectedGuild ? `
-        <div class="section-title">إعدادات نظام التذاكر لـ: <span style="color: var(--accent-color)">${selectedGuild.name}</span></div>
+        <div class="section-title">إعدادات لوحة المنيو لـ: <span style="color: var(--neon-cyan)">${selectedGuild.name}</span></div>
         
         <form class="settings-form" method="POST" action="/save">
             <input type="hidden" name="guildId" value="${guildId}">
 
-            <div class="form-group">
-                <label>رقم روم التذاكر (Channel ID):</label>
-                <input name="channelId" placeholder="اكتب ID الروم هنا" value="${config.channelId || ''}" required>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr; background: none; border: none; padding:0; margin:0;">
+                <div class="form-group">
+                    <label>رقم روم التذاكر (Channel ID):</label>
+                    <input name="channelId" placeholder="اكتب ID الروم هنا" value="${config.channelId || ''}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>رقم رتبة الدعم الفني (Staff Role ID):</label>
+                    <input name="staffRoleId" placeholder="اكتب ID الرتبة هنا" value="${config.staffRoleId || ''}" required>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>رقم رتبة الدعم الفني (Staff Role ID):</label>
-                <input name="staffRoleId" placeholder="اكتب ID الرتبة هنا" value="${config.staffRoleId || ''}" required>
+            <!-- خيار التذكرة الأول -->
+            <div class="form-grid">
+                <div class="form-grid-title">📍 الخيار الأول في القائمة المنسدلة:</div>
+                <div class="form-group">
+                    <label>اسم الخيار (Label):</label>
+                    <input name="btn1" placeholder="مثال: الدعم العام" value="${config.btn1 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
+                    <input name="emoji1" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji1 || ''}">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>اسم خيار التذكرة الأول (Button 1):</label>
-                <input name="btn1" placeholder="مثال: الدعم العام" value="${config.btn1 || ''}">
+            <!-- خيار التذكرة الثاني -->
+            <div class="form-grid">
+                <div class="form-grid-title">📍 الخيار الثاني في القائمة المنسدلة:</div>
+                <div class="form-group">
+                    <label>اسم الخيار (Label):</label>
+                    <input name="btn2" placeholder="مثال: تقديم على الإدارة" value="${config.btn2 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
+                    <input name="emoji2" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji2 || ''}">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>اسم خيار التذكرة الثاني (Button 2):</label>
-                <input name="btn2" placeholder="مثال: تقديم على الإدارة" value="${config.btn2 || ''}">
+            <!-- خيار التذكرة الثالث -->
+            <div class="form-grid">
+                <div class="form-grid-title">📍 الخيار الثالث في القائمة المنسدلة:</div>
+                <div class="form-group">
+                    <label>اسم الخيار (Label):</label>
+                    <input name="btn3" placeholder="مثال: شراء عملات أو رتب" value="${config.btn3 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
+                    <input name="emoji3" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji3 || ''}">
+                </div>
             </div>
 
-            <button type="submit" class="submit-btn">حفظ التعديلات وإرسال اللوحة</button>
+            <!-- خيار التذكرة الرابع -->
+            <div class="form-grid">
+                <div class="form-grid-title">📍 الخيار الرابع في القائمة المنسدلة:</div>
+                <div class="form-group">
+                    <label>اسم الخيار (Label):</label>
+                    <input name="btn4" placeholder="مثال: الإبلاغ عن مشكلة" value="${config.btn4 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
+                    <input name="emoji4" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji4 || ''}">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">⚡ حفظ الإعدادات ونشر اللوحة النارية</button>
         </form>
-        ` : guildId ? '' : '<div class="no-guild-msg">الرجاء تحديد سيرفر من الأعلى لعرض الإعدادات وتخصيصها.</div>'}
+        ` : guildId ? '' : '<div class="no-guild-msg">الرجاء تحديد سيرفر من القائمة العلوية لتخصيص خيارات القائمة والنظام.</div>'}
     </div>
 
     </body>
@@ -340,7 +403,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
 });
 
 // =====================================================
-// SAVE + SEND PANEL (تأمين معالجة وحفظ البيانات)
+// معالجة وحفظ البيانات وإرسال لوحة التذاكر الفخمة
 // =====================================================
 app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
     const data = req.body;
@@ -348,22 +411,29 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
 
     try {
         const channel = await client.channels.fetch(data.channelId);
-        if (!channel) return res.send('لم يتم العثور على الروم المحددة.');
+        if (!channel) return res.status(400).send('لم يتم العثور على الروم، تأكد من الـ ID.');
+
+        // بناء خيارات المنيو الأربعة بدقة مع التحقق من الإيموجيات المخصصة
+        const options = [
+            { label: data.btn1, value: 'ticket_1', ...(data.emoji1 ? { emoji: data.emoji1.trim() } : {}) },
+            { label: data.btn2, value: 'ticket_2', ...(data.emoji2 ? { emoji: data.emoji2.trim() } : {}) },
+            { label: data.btn3, value: 'ticket_3', ...(data.emoji3 ? { emoji: data.emoji3.trim() } : {}) },
+            { label: data.btn4, value: 'ticket_4', ...(data.emoji4 ? { emoji: data.emoji4.trim() } : {}) }
+        ];
 
         const menu = new StringSelectMenuBuilder()
-            .setCustomId('ticket_menu')
-            .setPlaceholder('اختر نوع التذكرة لفتحها')
-            .addOptions([
-                { label: data.btn1 || 'Ticket 1', value: '1' },
-                { label: data.btn2 || 'Ticket 2', value: '2' }
-            ]);
+            .setCustomId('ticket_neon_menu')
+            .setPlaceholder('🔮 اختر القسم المناسب لفتح تذكرتك المخصصة')
+            .addOptions(options);
 
         const row = new ActionRowBuilder().addComponents(menu);
 
         const embed = new EmbedBuilder()
-            .setColor('#5865F2')
-            .setTitle('🎫 نظام الدعم الفني والتذاكر')
-            .setDescription('مرحباً بك! لفتح تذكرة جديدة والتواصل مع فريق العمل، يرجى اختيار القسم المناسب من القائمة بالأسفل.');
+            .setColor('#00ffcc')
+            .setTitle('🎫 مركز الدعم الفني والتذاكر المطور')
+            .setDescription('مرحباً بك! لفتح تذكرة جديدة والتواصل مع فريق الإدارة، يرجى اختيار القسم المناسب لك من القائمة المنسدلة بالأسفل.\n\n*سيتم إنشاء مساحة محادثة خاصة بك فوراً.*')
+            .setFooter({ text: 'لوحة تحكم التذاكر الذكية المتكاملة', iconURL: client.user.displayAvatarURL() })
+            .setTimestamp();
 
         await channel.send({
             embeds: [embed],
@@ -373,26 +443,34 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
         res.redirect('/?guildId=' + data.guildId);
 
     } catch (e) {
-        console.log(e);
-        res.send('خطأ في إرسال اللوحة: تأكد من صحة ID الروم وإعطاء البوت صلاحية رؤية الروم وإرسال الرسائل.');
+        console.error(e);
+        res.send('❌ حدث خطأ: تأكد من صحة معرف الروم وصلاحيات البوت التامة لإرسال الرسائل بداخلها.');
     }
 });
 
 // =====================================================
-// TICKETS (تحسين متكامل لنظام إنشاء التذاكر آلياً)
+// نظام الاستقبال وتوليد التذاكر الآلي بناءً على الخيار
 // =====================================================
 client.on('interactionCreate', async interaction => {
+    if (!interaction.guild) return; 
     if (!interaction.isStringSelectMenu()) return;
-    if (interaction.customId !== 'ticket_menu') return;
+    if (interaction.customId !== 'ticket_neon_menu') return;
 
-    // لتفادي انتهاء وقت التفاعل (Timeout) ولتظهر التذكرة بشكل سلس
     await interaction.deferReply({ ephemeral: true });
 
     const config = getGuildConfig(interaction.guild.id);
+    const selectedValue = interaction.values[0];
+
+    // تحديد عنوان التذكرة المناسب بناءً على اختيار المستخدم من المنيو
+    let categoryName = 'تذكرة عامة';
+    if (selectedValue === 'ticket_1') categoryName = config.btn1;
+    if (selectedValue === 'ticket_2') categoryName = config.btn2;
+    if (selectedValue === 'ticket_3') categoryName = config.btn3;
+    if (selectedValue === 'ticket_4') categoryName = config.btn4;
 
     try {
         const channel = await interaction.guild.channels.create({
-            name: `🎫-${interaction.user.username}`,
+            name: `🎫-${categoryName}-${interaction.user.username}`,
             type: ChannelType.GuildText,
             permissionOverwrites: [
                 {
@@ -419,9 +497,10 @@ client.on('interactionCreate', async interaction => {
         });
 
         const welcomeEmbed = new EmbedBuilder()
-            .setColor('#5865F2')
-            .setTitle('تذكرة جديدة المساعدة')
-            .setDescription(`مرحباً بك ${interaction.user} في تذكرتك الخاصة.\nالرجاء كتابة استفسارك هنا، وسيقوم فريق الدعم الفني بالرد عليك بأقرب وقت ممكن.`);
+            .setColor('#9d4edd')
+            .setTitle(`🛡️ قسم: ${categoryName}`)
+            .setDescription(`مرحباً بك يا ${interaction.user} في تذكرتك الفنية.\nالرجاء كتابة طلبك أو استفسارك بالتفصيل وسيقوم مسؤول القسم والعمل بالرد عليك فوراً.`)
+            .setTimestamp();
 
         await channel.send({
             content: `${interaction.user} | ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`,
@@ -429,20 +508,20 @@ client.on('interactionCreate', async interaction => {
         });
 
         await interaction.editReply({
-            content: `تم إنشاء تذكرتك بنجاح بروم منفصلة: ${channel}`
+            content: `✅ تم إنشاء تذكرتك بنجاح داخل الروم المخصصة: ${channel}`
         });
 
     } catch (err) {
         console.error(err);
-        await interaction.editReply({ content: 'حدث خطأ أثناء محاولة إنشاء التذكرة، تأكد من صلاحيات البوت الإدارية بالسيرفر.' });
+        await interaction.editReply({ content: '❌ فشل إنشاء التذكرة، يرجى مراجعة إداري السيرفر للتأكد من تخطي البوت لصلاحيات الرتب الحالية.' });
     }
 });
 
 // =====================================================
-// START
+// تشغيل السيرفر والبوت
 // =====================================================
 app.listen(3000, () => {
-    console.log('Dashboard Running on http://localhost:3000');
+    console.log('[🚀] اللوحة تعمل بكفاءة على الرابط: http://localhost:3000');
 });
 
 client.login(BOT_TOKEN);
