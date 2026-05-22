@@ -129,11 +129,19 @@ app.get('/callback', async (req, res) => {
 
         // جلب السيرفرات التي يمتلك فيها المستخدم صلاحية ADMINISTRATOR (0x8)
         // أو يكون هو مالك السيرفر (Owner)
-        const adminGuilds = guilds.filter(g => {
-            const isOwner = g.owner === true;
-            const isAdmin = (BigInt(g.permissions) & BigInt(0x8)) === BigInt(0x8);
-            return isOwner || isAdmin;
-        });
+        // جلب السيرفرات التي يمتلك فيها المستخدم صلاحية ADMINISTRATOR بشكل صحيح وآمن
+const adminGuilds = guilds.filter(g => {
+    const isOwner = g.owner === true;
+    
+    // تحويل النص القادم من ديسكورد إلى BigInt بأمان
+    const userPermissions = BigInt(g.permissions || 0);
+    
+    // رقم صلاحية الـ Administrator في ديسكورد هو 8 (0x8)
+    const isAdmin = (userPermissions & 0x8n) === 0x8n;
+    
+    return isOwner || isAdmin;
+});
+
 
         // تصفية السيرفرات الإدارية لتشمل فقط السيرفرات المشتركة المتواجد فيها البوت حالياً
         const botGuildIds = client.guilds.cache.map(g => g.id);
