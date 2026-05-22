@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: 'discord_dashboard_secret_neon_generation',
+    secret: 'discord_dashboard_secret_neon_generation_v2',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 600000 * 60 }
@@ -55,7 +55,7 @@ client.once('ready', () => {
     console.log(`[🤖] ${client.user.tag} جاهز للعمل والتحكم باللوحة!`);
 });
 
-// ===== جدران الحماية والأمان =====
+// ===== جدران الحماية والأمان وتصحيح التوجيه التلقائي =====
 function checkAuth(req, res, next) {
     if (!req.session.user) return res.redirect('/login');
     next();
@@ -67,9 +67,10 @@ function checkGuildAccess(req, res, next) {
     
     const guilds = req.session.guilds || [];
     const hasAccess = guilds.some(g => g.id === guildId);
-    if (!hasAccess) return res.status(403).send('❌ خطأ أمني: لا تملك صلاحية الوصول لهذا السيرفر.');
+    if (!hasAccess) return res.status(403).send('خطأ أمني: لا تملك صلاحية الوصول لهذا السيرفر.');
     next();
 }
+
 // =====================================================
 // نظام تسجيل الدخول (OAuth2)
 // =====================================================
@@ -157,8 +158,9 @@ app.get('/callback', async (req, res) => {
         res.send('OAuth Error');
     }
 });
+
 // =====================================================
-// لوحة التحكم بتصميم خرافي وناري وجديد كلياً
+// لوحة التحكم بتصميم ناري وجديد وبدون أي إيموجيات
 // =====================================================
 app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     const guildId = req.query.guildId || '';
@@ -215,7 +217,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
             .navbar {
                 background: rgba(19, 21, 26, 0.8);
                 backdrop-filter: blur(12px);
-                border-b: 1px solid rgba(255,255,255,0.05);
+                border-bottom: 1px solid rgba(255,255,255,0.05);
                 padding: 15px 40px;
                 display: flex;
                 justify-content: space-between;
@@ -294,9 +296,9 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
             .form-grid-title { grid-column: span 2; font-weight: bold; color: var(--neon-cyan); font-size: 15px; margin-bottom: -5px; }
 
             .form-group { margin-bottom: 25px; }
-            .form-group.full-width { grid-column: span 2; margin-bottom: 5px; }
+            .form-group.full-width { grid-column: span 2; margin-bottom: 25px; }
             .form-group label { display: block; margin-bottom: 10px; font-size: 14px; color: #a4a9b3; font-weight: 600; }
-            .form-group input {
+            .form-group input, .form-group textarea {
                 width: 100%;
                 padding: 14px;
                 background-color: var(--bg-input);
@@ -307,7 +309,8 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
                 font-size: 15px;
                 transition: all 0.3s;
             }
-            .form-group input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0,255,204,0.3); outline: none; }
+            .form-group textarea { height: 100px; resize: vertical; font-family: inherit; }
+            .form-group input:focus, .form-group textarea:focus { border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0,255,204,0.3); outline: none; }
             
             .submit-btn {
                 background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
@@ -335,13 +338,9 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     <body>
 
     <div class="navbar">
-        <h2>🔥 NEON DASHBOARD</h2>
+        <h2>NEON DASHBOARD</h2>
         <div class="user-profile">
-            <img class="user-avatar" src="${
-req.session.user.avatar
-? `https://cdn.discordapp.com/avatars/${req.session.user.id}/${req.session.user.avatar}.png`
-: 'https://cdn.discordapp.com/embed/avatars/0.png'
-}" alt="avatar">
+            <img class="user-avatar" src="${req.session.user.avatar ? `https://discordapp.com{req.session.user.id}/${req.session.user.avatar}.png` : 'https://discordapp.com'}" alt="avatar">
             <span>${req.session.user.username}</span>
         </div>
     </div>
@@ -370,59 +369,45 @@ req.session.user.avatar
                 </div>
             </div>
 
-            <!-- خيار التذكرة الأول -->
+            <!-- إعدادات الميديا ومحتوى التذكرة -->
             <div class="form-grid">
-                <div class="form-grid-title">📍 الخيار الأول في القائمة المنسدلة:</div>
+                <div class="form-grid-title">التحكم بالميديا والرسائل:</div>
                 <div class="form-group">
-                    <label>اسم الخيار (Label):</label>
+                    <label>رابط الصورة الصغيرة المربعة (العلوية):</label>
+                    <input name="smallImage" placeholder="ضع رابط الصورة المربعة هنا URL" value="${config.smallImage || ''}">
+                </div>
+                <div class="form-group">
+                    <label>رابط الصورة الوسطى (السفلية وداخل التذكرة):</label>
+                    <input name="mediumImage" placeholder="ضع رابط الصورة الوسطى هنا URL" value="${config.mediumImage || ''}">
+                </div>
+                <div class="form-group full-width">
+                    <label>محتوى رسالة التذكرة (وصف الإمباد الأساسي):</label>
+                    <textarea name="embedDesc" placeholder="اكتب النص الذي يظهر للمستخدمين داخل اللوحة هنا..." required>${config.embedDesc || 'لفتح تذكرة جديدة والتواصل مع فريق العمل، يرجى اختيار القسم المناسب من القائمة بالأسفل.'}</textarea>
+                </div>
+            </div>
+
+            <!-- خيارات المنيو -->
+            <div class="form-grid">
+                <div class="form-grid-title">أقسام القائمة المنسدلة:</div>
+                <div class="form-group">
+                    <label>القسم الأول:</label>
                     <input name="btn1" placeholder="مثال: الدعم العام" value="${config.btn1 || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
-                    <input name="emoji1" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji1 || ''}">
-                </div>
-            </div>
-
-            <!-- خيار التذكرة الثاني -->
-            <div class="form-grid">
-                <div class="form-grid-title">📍 الخيار الثاني في القائمة المنسدلة:</div>
-                <div class="form-group">
-                    <label>اسم الخيار (Label):</label>
+                    <label>القسم الثاني:</label>
                     <input name="btn2" placeholder="مثال: تقديم على الإدارة" value="${config.btn2 || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
-                    <input name="emoji2" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji2 || ''}">
+                    <label>القسم الثالث:</label>
+                    <input name="btn3" placeholder="مثال: قسم المشتريات" value="${config.btn3 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>القسم الرابع:</label>
+                    <input name="btn4" placeholder="مثال: الإبلاغ عن لاعب" value="${config.btn4 || ''}" required>
                 </div>
             </div>
 
-            <!-- خيار التذكرة الثالث -->
-            <div class="form-grid">
-                <div class="form-grid-title">📍 الخيار الثالث في القائمة المنسدلة:</div>
-                <div class="form-group">
-                    <label>اسم الخيار (Label):</label>
-                    <input name="btn3" placeholder="مثال: شراء عملات أو رتب" value="${config.btn3 || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
-                    <input name="emoji3" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji3 || ''}">
-                </div>
-            </div>
-
-            <!-- خيار التذكرة الرابع -->
-            <div class="form-grid">
-                <div class="form-grid-title">📍 الخيار الرابع في القائمة المنسدلة:</div>
-                <div class="form-group">
-                    <label>اسم الخيار (Label):</label>
-                    <input name="btn4" placeholder="مثال: الإبلاغ عن مشكلة" value="${config.btn4 || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label>آيدي إيموجي الخيار (Emoji ID):</label>
-                    <input name="emoji4" placeholder="اختياري: اكتب ID الإيموجي فقط" value="${config.emoji4 || ''}">
-                </div>
-            </div>
-
-            <button type="submit" class="submit-btn">⚡ حفظ الإعدادات ونشر اللوحة النارية</button>
+            <button type="submit" class="submit-btn">حفظ الإعدادات ونشر اللوحة</button>
         </form>
         ` : guildId ? '' : '<div class="no-guild-msg">الرجاء تحديد سيرفر من القائمة العلوية لتخصيص خيارات القائمة والنظام.</div>'}
     </div>
@@ -433,7 +418,7 @@ req.session.user.avatar
 });
 
 // =====================================================
-// معالجة وحفظ البيانات وإرسال لوحة التذاكر الفخمة
+// معالجة وحفظ البيانات وإرسال لوحة التذاكر بدون إيموجيات
 // =====================================================
 app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
     const data = req.body;
@@ -443,27 +428,34 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
         const channel = await client.channels.fetch(data.channelId);
         if (!channel) return res.status(400).send('لم يتم العثور على الروم، تأكد من الـ ID.');
 
-        // بناء خيارات المنيو الأربعة بدقة مع التحقق من الإيموجيات المخصصة
         const options = [
-            { label: data.btn1, value: 'ticket_1', ...(data.emoji1 ? { emoji: data.emoji1.trim() } : {}) },
-            { label: data.btn2, value: 'ticket_2', ...(data.emoji2 ? { emoji: data.emoji2.trim() } : {}) },
-            { label: data.btn3, value: 'ticket_3', ...(data.emoji3 ? { emoji: data.emoji3.trim() } : {}) },
-            { label: data.btn4, value: 'ticket_4', ...(data.emoji4 ? { emoji: data.emoji4.trim() } : {}) }
+            { label: data.btn1, value: 'ticket_1' },
+            { label: data.btn2, value: 'ticket_2' },
+            { label: data.btn3, value: 'ticket_3' },
+            { label: data.btn4, value: 'ticket_4' }
         ];
 
         const menu = new StringSelectMenuBuilder()
             .setCustomId('ticket_neon_menu')
-            .setPlaceholder('🔮 اختر القسم المناسب لفتح تذكرتك المخصصة')
+            .setPlaceholder('اختر القسم المناسب لفتح تذكرتك المخصصة')
             .addOptions(options);
 
         const row = new ActionRowBuilder().addComponents(menu);
 
         const embed = new EmbedBuilder()
             .setColor('#00ffcc')
-            .setTitle('🎫 مركز الدعم الفني والتذاكر المطور')
-            .setDescription('مرحباً بك! لفتح تذكرة جديدة والتواصل مع فريق الإدارة، يرجى اختيار القسم المناسب لك من القائمة المنسدلة بالأسفل.\n\n*سيتم إنشاء مساحة محادثة خاصة بك فوراً.*')
-            .setFooter({ text: 'لوحة تحكم التذاكر الذكية المتكاملة', iconURL: client.user.displayAvatarURL() })
-            .setTimestamp();
+            .setTitle('مركز الدعم الفني والتذاكر المطور')
+            .setDescription(data.embedDesc);
+
+        // إضافة الصورة المربعة الصغيرة بالأعلى إذا وجدت
+        if (data.smallImage && data.smallImage.trim() !== '') {
+            embed.setThumbnail(data.smallImage.trim());
+        }
+
+        // إضافة الصورة الوسطى بالأسفل إذا وجدت
+        if (data.mediumImage && data.mediumImage.trim() !== '') {
+            embed.setImage(data.mediumImage.trim());
+        }
 
         await channel.send({
             embeds: [embed],
@@ -474,12 +466,12 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
 
     } catch (e) {
         console.error(e);
-        res.send('❌ حدث خطأ: تأكد من صحة معرف الروم وصلاحيات البوت التامة لإرسال الرسائل بداخلها.');
+        res.send('حدث خطأ: تأكد من صحة معرف الروم وصلاحيات البوت التامة لإرسال الرسائل بداخلها روابط الصور.');
     }
 });
 
 // =====================================================
-// نظام الاستقبال وتوليد التذاكر الآلي بناءً على الخيار
+// نظام الاستقبال وتوليد التذاكر مع الصورة الوسطى
 // =====================================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.guild) return; 
@@ -491,7 +483,6 @@ client.on('interactionCreate', async interaction => {
     const config = getGuildConfig(interaction.guild.id);
     const selectedValue = interaction.values[0];
 
-    // تحديد عنوان التذكرة المناسب بناءً على اختيار المستخدم من المنيو
     let categoryName = 'تذكرة عامة';
     if (selectedValue === 'ticket_1') categoryName = config.btn1;
     if (selectedValue === 'ticket_2') categoryName = config.btn2;
@@ -500,7 +491,7 @@ client.on('interactionCreate', async interaction => {
 
     try {
         const channel = await interaction.guild.channels.create({
-            name: `🎫-${categoryName}-${interaction.user.username}`,
+            name: `${categoryName}-${interaction.user.username}`,
             type: ChannelType.GuildText,
             permissionOverwrites: [
                 {
@@ -528,9 +519,13 @@ client.on('interactionCreate', async interaction => {
 
         const welcomeEmbed = new EmbedBuilder()
             .setColor('#9d4edd')
-            .setTitle(`🛡️ قسم: ${categoryName}`)
-            .setDescription(`مرحباً بك يا ${interaction.user} في تذكرتك الفنية.\nالرجاء كتابة طلبك أو استفسارك بالتفصيل وسيقوم مسؤول القسم والعمل بالرد عليك فوراً.`)
-            .setTimestamp();
+            .setTitle(`قسم: ${categoryName}`)
+            .setDescription(`مرحباً بك في تذكرتك الخاصة.\nالرجاء كتابة طلبك أو استفسارك بالتفصيل وسيقوم مسؤول القسم والعمل بالرد عليك فوراً.`);
+
+        // ربط وإدخال الصورة الوسطى المحددة من اللوحة داخل التذكرة الجديدة
+        if (config.mediumImage && config.mediumImage.trim() !== '') {
+            welcomeEmbed.setImage(config.mediumImage.trim());
+        }
 
         await channel.send({
             content: `${interaction.user} | ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`,
@@ -538,12 +533,12 @@ client.on('interactionCreate', async interaction => {
         });
 
         await interaction.editReply({
-            content: `✅ تم إنشاء تذكرتك بنجاح داخل الروم المخصصة: ${channel}`
+            content: `تم إنشاء تذكرتك بنجاح داخل الروم المخصصة: ${channel}`
         });
 
     } catch (err) {
         console.error(err);
-        await interaction.editReply({ content: '❌ فشل إنشاء التذكرة، يرجى مراجعة إداري السيرفر للتأكد من تخطي البوت لصلاحيات الرتب الحالية.' });
+        await interaction.editReply({ content: 'فشل إنشاء التذكرة، يرجى مراجعة إداري السيرفر للتأكد من تخطي البوت لصلاحيات الرتب الحالية.' });
     }
 });
 
