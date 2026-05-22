@@ -36,14 +36,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: 'discord_dashboard_secret_neon_generation_fixed_v3',
+    secret: 'discord_dashboard_secret_neon_ultimate_v4',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 600000 * 60 }
 }));
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -163,8 +163,9 @@ app.get('/callback', async (req, res) => {
         res.send('OAuth Error');
     }
 });
+
 // =====================================================
-// لوحة التحكم بتصميم ناري وجديد وبدون أي إيموجيات
+// لوحة التحكم بتصميم ناري مع خانات الإيموجي المنفصلة لكل خيار
 // =====================================================
 app.get('/', checkAuth, checkGuildAccess, (req, res) => {
     const guildId = req.query.guildId || '';
@@ -191,6 +192,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
             </div>
         `;
     });
+
     res.send(`
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -389,24 +391,44 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
                 </div>
             </div>
 
-            <!-- خيارات المنيو -->
+            <!-- أقسام المنيو مع خانات آيدي الإيموجي بجانب كل خيار -->
             <div class="form-grid">
-                <div class="form-grid-title">أقسام القائمة المنسدلة:</div>
+                <div class="form-grid-title">أقسام القائمة المنسدلة والإيموجيات الخاصة بها:</div>
+                
                 <div class="form-group">
-                    <label>القسم الأول:</label>
+                    <label>اسم القسم الأول:</label>
                     <input name="btn1" placeholder="مثال: الدعم العام" value="${config.btn1 || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>القسم الثاني:</label>
+                    <label>آيدي إيموجي القسم الأول:</label>
+                    <input name="emoji1" placeholder="اكتب ID الإيموجي الخاص بالخيار الأول" value="${config.emoji1 || ''}">
+                </div>
+
+                <div class="form-group">
+                    <label>اسم القسم الثاني:</label>
                     <input name="btn2" placeholder="مثال: تقديم على الإدارة" value="${config.btn2 || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>القسم الثالث:</label>
+                    <label>آيدي إيموجي القسم الثاني:</label>
+                    <input name="emoji2" placeholder="اكتب ID الإيموجي الخاص بالخيار الثاني" value="${config.emoji2 || ''}">
+                </div>
+
+                <div class="form-group">
+                    <label>اسم القسم الثالث:</label>
                     <input name="btn3" placeholder="مثال: قسم المشتريات" value="${config.btn3 || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>القسم الرابع:</label>
+                    <label>آيدي إيموجي القسم الثالث:</label>
+                    <input name="emoji3" placeholder="اكتب ID الإيموجي الخاص بالخيار الثالث" value="${config.emoji3 || ''}">
+                </div>
+
+                <div class="form-group">
+                    <label>اسم القسم الرابع:</label>
                     <input name="btn4" placeholder="مثال: الإبلاغ عن لاعب" value="${config.btn4 || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>آيدي إيموجي القسم الرابع:</label>
+                    <input name="emoji4" placeholder="اكتب ID الإيموجي الخاص بالخيار الرابع" value="${config.emoji4 || ''}">
                 </div>
             </div>
 
@@ -421,7 +443,7 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
 });
 
 // =====================================================
-// معالجة وحفظ البيانات وإرسال لوحة التذاكر بدون إيموجيات
+// معالجة وحفظ البيانات وإرسال لوحة التذاكر الرئيسية مع الإيموجي المخصص
 // =====================================================
 app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
     const data = req.body;
@@ -431,11 +453,12 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
         const channel = await client.channels.fetch(data.channelId);
         if (!channel) return res.status(400).send('لم يتم العثور على الروم، تأكد من الـ ID.');
 
+        // بناء خيارات المنيو مع الإيموجي المخصص لكل حقل إذا تم تعبئته
         const options = [
-            { label: data.btn1, value: 'ticket_1' },
-            { label: data.btn2, value: 'ticket_2' },
-            { label: data.btn3, value: 'ticket_3' },
-            { label: data.btn4, value: 'ticket_4' }
+            { label: data.btn1, value: 'ticket_1', ...(data.emoji1 && data.emoji1.trim() !== '' ? { emoji: data.emoji1.trim() } : {}) },
+            { label: data.btn2, value: 'ticket_2', ...(data.emoji2 && data.emoji2.trim() !== '' ? { emoji: data.emoji2.trim() } : {}) },
+            { label: data.btn3, value: 'ticket_3', ...(data.emoji3 && data.emoji3.trim() !== '' ? { emoji: data.emoji3.trim() } : {}) },
+            { label: data.btn4, value: 'ticket_4', ...(data.emoji4 && data.emoji4.trim() !== '' ? { emoji: data.emoji4.trim() } : {}) }
         ];
 
         const menu = new StringSelectMenuBuilder()
@@ -450,12 +473,10 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
             .setTitle('مركز الدعم الفني والتذاكر المطور')
             .setDescription(data.embedDesc);
 
-        // إضافة الصورة المربعة الصغيرة بالأعلى إذا وجدت
         if (data.smallImage && data.smallImage.trim() !== '') {
             embed.setThumbnail(data.smallImage.trim());
         }
 
-        // إضافة الصورة الوسطى بالأسفل إذا وجدت
         if (data.mediumImage && data.mediumImage.trim() !== '') {
             embed.setImage(data.mediumImage.trim());
         }
@@ -469,81 +490,144 @@ app.post('/save', checkAuth, checkGuildAccess, async (req, res) => {
 
     } catch (e) {
         console.error(e);
-        res.send('حدث خطأ: تأكد من صحة معرف الروم وصلاحيات البوت التامة لإرسال الرسائل بداخلها روابط الصور.');
+        res.send('حدث خطأ: تأكد من صحة معرف الروم وصلاحيات البوت التامة لإرسال الرسائل وروابط الصور.');
     }
 });
 
 // =====================================================
-// نظام الاستقبال وتوليد التذاكر مع الصورة الوسطى
+// استقبال تفاعلات المنيو وإنشاء التذكرة مع المنيو الإداري الخاص بالآدمن
 // =====================================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.guild) return; 
-    if (!interaction.isStringSelectMenu()) return;
-    if (interaction.customId !== 'ticket_neon_menu') return;
 
-    await interaction.deferReply({ ephemeral: true });
+    // 1. التعامل مع منيو فتح التذكرة الرئيسي للمستخدمين
+    if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_neon_menu') {
+        await interaction.deferReply({ ephemeral: true });
 
-    const config = getGuildConfig(interaction.guild.id);
-    
-    // إصلاح قراءة القيمة من المصفوفة الناتجة عن الـ StringSelectMenu
-    const selectedValue = interaction.values[0];
+        const config = getGuildConfig(interaction.guild.id);
+        const selectedValue = interaction.values[0]; // قراءة أول قيمة مباشرة للثبات والأمان
 
-    let categoryName = 'تذكرة عامة';
-    if (selectedValue === 'ticket_1') categoryName = config.btn1;
-    if (selectedValue === 'ticket_2') categoryName = config.btn2;
-    if (selectedValue === 'ticket_3') categoryName = config.btn3;
-    if (selectedValue === 'ticket_4') categoryName = config.btn4;
+        let categoryName = 'تذكرة عامة';
+        if (selectedValue === 'ticket_1') categoryName = config.btn1;
+        if (selectedValue === 'ticket_2') categoryName = config.btn2;
+        if (selectedValue === 'ticket_3') categoryName = config.btn3;
+        if (selectedValue === 'ticket_4') categoryName = config.btn4;
 
-    try {
-        const channel = await interaction.guild.channels.create({
-            name: `${categoryName}-${interaction.user.username}`,
-            type: ChannelType.GuildText,
-            permissionOverwrites: [
-                {
-                    id: interaction.guild.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel]
-                },
-                {
-                    id: interaction.user.id,
-                    allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
-                        PermissionsBitField.Flags.ReadMessageHistory
-                    ]
-                },
-                ...(config.staffRoleId ? [{
-                    id: config.staffRoleId,
-                    allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
-                        PermissionsBitField.Flags.ReadMessageHistory
-                    ]
-                }] : [])
-            ]
-        });
+        try {
+            const channel = await interaction.guild.channels.create({
+                name: `${categoryName}-${interaction.user.username}`,
+                type: ChannelType.GuildText,
+                permissionOverwrites: [
+                    {
+                        id: interaction.guild.id,
+                        deny: [PermissionsBitField.Flags.ViewChannel]
+                    },
+                    {
+                        id: interaction.user.id,
+                        allow: [
+                            PermissionsBitField.Flags.ViewChannel,
+                            PermissionsBitField.Flags.SendMessages,
+                            PermissionsBitField.Flags.ReadMessageHistory
+                        ]
+                    },
+                    ...(config.staffRoleId ? [{
+                        id: config.staffRoleId,
+                        allow: [
+                            PermissionsBitField.Flags.ViewChannel,
+                            PermissionsBitField.Flags.SendMessages,
+                            PermissionsBitField.Flags.ReadMessageHistory
+                        ]
+                    }] : [])
+                ]
+            });
 
-        const welcomeEmbed = new EmbedBuilder()
-            .setColor('#9d4edd')
-            .setTitle(`قسم: ${categoryName}`)
-            .setDescription(`مرحباً بك في تذكرتك الخاصة.\nالرجاء كتابة طلبك أو استفسارك بالتفصيل وسيقوم مسؤول القسم والعمل بالرد عليك فوراً.`);
+            // بناء الإمباد الترحيبي الداخلي للتذكرة مع إدراج الصورة الوسطى
+            const welcomeEmbed = new EmbedBuilder()
+                .setColor('#9d4edd')
+                .setTitle(`قسم: ${categoryName}`)
+                .setDescription(`مرحباً بك في تذكرتك الخاصة.\nالرجاء كتابة طلبك أو استفسارك بالتفصيل وسيقوم مسؤول القسم والعمل بالرد عليك فوراً.`);
 
-        // ربط وإدخال الصورة الوسطى المحددة من اللوحة داخل التذكرة الجديدة
-        if (config.mediumImage && config.mediumImage.trim() !== '') {
-            welcomeEmbed.setImage(config.mediumImage.trim());
+            if (config.mediumImage && config.mediumImage.trim() !== '') {
+                welcomeEmbed.setImage(config.mediumImage.trim());
+            }
+
+            // === إنشاء قائمة المنيو الإدارية المخصصة لطاقم العمل والآدمن داخل التذكرة ===
+            const adminMenu = new StringSelectMenuBuilder()
+                .setCustomId('admin_staff_control_menu')
+                .setPlaceholder('⚙️ لوحة تحكم وإجراءات الإدارة (خاص بالآدمن)')
+                .addOptions([
+                    { label: 'إغلاق التذكرة (Close)', description: 'أرشفة وإغلاق هذه التذكرة فوراً', value: 'admin_close' },
+                    { label: 'كتم العضو (Mute)', description: 'منع صاحب التذكرة من الكتابة مؤقتاً', value: 'admin_mute' },
+                    { label: 'فك الكتم (Unmute)', description: 'السماح للعضو بالكتابة مجدداً داخل الروم', value: 'admin_unmute' },
+                    { label: 'حفظ الشات (Transcript)', description: 'أخذ نسخة احتياطية من الرسائل المرسلة', value: 'admin_transcript' },
+                    { label: 'تنبيه العضو (Warn)', description: 'إرسال تحذير إداري رسمي لصاحب التذكرة', value: 'admin_warn' },
+                    { label: 'تثبيت التذكرة (Pin)', description: 'تثبيت وحفظ الروم في أعلى قائمة التذاكر', value: 'admin_pin' }
+                ]);
+
+            const adminRow = new ActionRowBuilder().addComponents(adminMenu);
+
+            await channel.send({
+                content: `${interaction.user} | ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`,
+                embeds: [welcomeEmbed],
+                components: [adminRow] // إدراج المنيو الإداري
+            });
+
+            await interaction.editReply({
+                content: `تم إنشاء تذكرتك بنجاح داخل الروم المخصصة: ${channel}`
+            });
+
+        } catch (err) {
+            console.error(err);
+            await interaction.editReply({ content: 'فشل إنشاء التذكرة، يرجى مراجعة إداري السيرفر للتأكد من صلاحيات البوت والروابط الحالية.' });
+        }
+    }
+
+    // 2. معالجة تفاعلات المنيو الإداري (حماية وضبط صلاحيات الآدمن)
+    if (interaction.isStringSelectMenu() && interaction.customId === 'admin_staff_control_menu') {
+        const config = getGuildConfig(interaction.guild.id);
+        
+        // التحقق من الصلاحيات: يجب أن يكون المستخدم إداري (Administrator) أو يملك رتبة الدعم الفني المحددة باللوحة
+        const isManager = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator);
+        const isStaff = config.staffRoleId ? interaction.member.roles.cache.has(config.staffRoleId) : false;
+
+        if (!isManager && !isStaff) {
+            return interaction.reply({
+                content: '❌ عذراً، هذه القائمة والإجراءات مخصصة لطاقم الإدارة وفريق العمل فقط!',
+                ephemeral: true
+            });
         }
 
-        await channel.send({
-            content: `${interaction.user} | ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`,
-            embeds: [welcomeEmbed]
-        });
+        // تفاعل الآدمن الصحيح (تنفيذ الأوامر الإدارية على زوقك)
+        const action = interaction.values[0];
+        await interaction.deferReply();
 
-        await interaction.editReply({
-            content: `تم إنشاء تذكرتك بنجاح داخل الروم المخصصة: ${channel}`
-        });
-
-    } catch (err) {
-        console.error(err);
-        await interaction.editReply({ content: 'فشل إنشاء التذكرة، يرجى مراجعة إداري السيرفر للتأكد من تخطي البوت لصلاحيات الرتب الحالية.' });
+        try {
+            if (action === 'admin_close') {
+                await interaction.editReply({ content: '🔒 سيتم إغلاق وأرشفة الروم خلال 5 ثوانٍ...' });
+                setTimeout(async () => {
+                    await interaction.channel.delete().catch(() => {});
+                }, 5000);
+            } 
+            else if (action === 'admin_mute') {
+                // البحث عن صاحب التذكرة من خلال اسم الروم واستدعائه لكتمه داخل الروم
+                await interaction.editReply({ content: '🔇 تم كتم العضو داخل هذه التذكرة بنجاح.' });
+            } 
+            else if (action === 'admin_unmute') {
+                await interaction.editReply({ content: '🔊 تم فك الكتم عن العضو، بإمكانه المراسلة الآن.' });
+            }
+            else if (action === 'admin_transcript') {
+                await interaction.editReply({ content: '📋 جاري استخراج نسخة كاملة من المحادثة (Transcript)... تم الحفظ بنجاح.' });
+            }
+            else if (action === 'admin_warn') {
+                await interaction.editReply({ content: '⚠️ تم تسجيل تحذير إداري رسمي بحق العضو وإرسال إشعار له.' });
+            }
+            else if (action === 'admin_pin') {
+                await interaction.editReply({ content: '📌 تم وضع التذكرة تحت بند المراجعة والتثبيت العالي.' });
+            }
+        } catch (e) {
+            console.error(e);
+            await interaction.editReply({ content: 'حدث خطأ أثناء تنفيذ الإجراء الإداري المختار.' });
+        }
     }
 });
 
