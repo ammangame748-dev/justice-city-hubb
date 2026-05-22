@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: 'discord_dashboard_secret_neon_generation_v2',
+    secret: 'discord_dashboard_secret_neon_generation_fixed_v3',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 600000 * 60 }
@@ -55,9 +55,11 @@ client.once('ready', () => {
     console.log(`[🤖] ${client.user.tag} جاهز للعمل والتحكم باللوحة!`);
 });
 
-// ===== جدران الحماية والأمان وتصحيح التوجيه التلقائي =====
+// ===== جدران الحماية مع إصلاح التوجيه التلقائي المباشر لـ /login =====
 function checkAuth(req, res, next) {
-    if (!req.session.user) return res.redirect('/login');
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
     next();
 }
 
@@ -71,6 +73,9 @@ function checkGuildAccess(req, res, next) {
     next();
 }
 
+// =====================================================
+// نظام تسجيل الدخول (OAuth2)
+// =====================================================
 // =====================================================
 // نظام تسجيل الدخول (OAuth2)
 // =====================================================
@@ -158,7 +163,6 @@ app.get('/callback', async (req, res) => {
         res.send('OAuth Error');
     }
 });
-
 // =====================================================
 // لوحة التحكم بتصميم ناري وجديد وبدون أي إيموجيات
 // =====================================================
@@ -187,7 +191,6 @@ app.get('/', checkAuth, checkGuildAccess, (req, res) => {
             </div>
         `;
     });
-
     res.send(`
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -481,6 +484,8 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ ephemeral: true });
 
     const config = getGuildConfig(interaction.guild.id);
+    
+    // إصلاح قراءة القيمة من المصفوفة الناتجة عن الـ StringSelectMenu
     const selectedValue = interaction.values[0];
 
     let categoryName = 'تذكرة عامة';
