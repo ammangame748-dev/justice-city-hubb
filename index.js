@@ -12,7 +12,8 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
 // ================= DATABASE =================
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://hsamhmaydh4_db_user:xls5Av4Nr4a5PA7W@cluster0.wjnh8d0.mongodb.net/?appName=Cluster0";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://justice_admin:Hosamhosamhosam@cluster0.wjnh8d0.mongodb.net/justice_db?retryWrites=true&w=majority";
+
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ متصل بالداتابيز بنجاح'))
